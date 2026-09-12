@@ -206,7 +206,7 @@ button:disabled{background:#bbb !important;box-shadow:none;cursor:not-allowed;op
 <div class="stat-line"><span>📊 约定统计</span><span>总计 <b id="totalTask">0</b>｜已完成 <b id="doneTask">0</b>｜待兑现 <b id="waitTask">0</b>｜兑现率 <b id="finishRate">0</b>%</span></div>
 </div>
 <div class="info-card">
-<h3 style="display:flex;justify-content:space-between;align-items:center;"><span>💬 双人即时消息<span id="onlineBadge" class="online-badge offline">⚪ 好友离线</span></span><button class="btn-purple btn-sm" onclick="openSecretModal()">💌 悄悄话<span id="secretBadge" class="secret-badge hide">0</span></button></h3>
+<h3 style="display:flex;justify-content:space-between;align-items:center;"><span>💬 即时消息<span id="onlineBadge" class="online-badge offline">⚪ 好友离线</span></span><button class="btn-purple btn-sm" onclick="openSecretModal()">💌 悄悄话<span id="secretBadge" class="secret-badge hide">0</span></button></h3>
 <div id="instantMsgList" class="msg-list"></div>
 <div class="row" style="margin-bottom:0;"><input type="text" id="instantMsgInput" class="grow" placeholder="写句话发给伙伴" autocomplete="off"><button class="btn-purple" onclick="sendInstantMsg()">📤 发送</button></div>
 </div>
@@ -629,7 +629,7 @@ let lastTipKey = "";
 let presenceOk = false;
 let otherLastSeen = 0;
 function timeAgo(ts) {
-    if (!ts) return "还未上线";
+    if (!ts) return "未上线";
     const diff = Date.now() - ts;
     if (diff < 60000) return "刚刚在线";
     const min = Math.floor(diff / 60000);
