@@ -1,0 +1,1669 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="时光备忘录">
+<meta name="theme-color" content="#a86b94">
+<title>时光备忘录2.0｜Supabase云同步</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.1/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.6.0/dist/echarts.min.js" crossorigin="anonymous"></script>
+<style>
+:root{--primary:#a86b94;--primary-dark:#7d4a68;--primary-deep:#6d3d58;--primary-soft:#faf2f7;--card-bg:#fff;--card-soft:#fdf7fb;--text-main:#5a4650;--text-sub:#8a7884;--text-light:#9c8c94;--border:#eed9e7;--border-dash:#e6d0e2;--danger:#e0566b;--success:#5cb889;--radius-lg:20px;--radius-md:14px;--radius-sm:10px;--gap:10px;--ctrl-h:44px;--grad-main:linear-gradient(135deg,#c08ac2,#a86b94 55%,#8f5a8c);--grad-soft:linear-gradient(160deg,#fdf3fa,#f7ebf5);--grad-card:linear-gradient(180deg,#ffffff,#fef9fc);--shadow-card:0 10px 32px rgba(168,107,148,.14),0 2px 8px rgba(168,107,148,.06);--shadow-item:0 4px 14px rgba(168,107,148,.10);--shadow-pop:0 20px 50px rgba(90,50,80,.28);}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",PingFang SC,Hiragino Sans GB,Microsoft YaHei,sans-serif;background:linear-gradient(160deg,#f7eef6 0%,#f2e7f1 45%,#f6eef5 100%);background-attachment:fixed;min-height:100vh;padding:20px 14px;color:var(--text-main);line-height:1.5;-webkit-text-size-adjust:100%;overflow-x:hidden;}
+body::before{content:"";position:fixed;top:-120px;left:50%;transform:translateX(-50%);width:640px;height:320px;background:radial-gradient(closest-side,rgba(192,138,194,.22),transparent);pointer-events:none;z-index:0;}
+.item-card,.info-card,.chart-wrap,.mood-item,.shop-item,.record-item,.reset-pop,.gen-result-area,.top-bar,.stat-line,.field-hint,.status-tip,.level-up-text{overflow-wrap:break-word;word-break:break-word;}
+.container{position:relative;z-index:1;max-width:620px;margin:0 auto;background:var(--grad-card);border:1px solid rgba(232,205,224,.6);border-radius:28px;padding:24px 18px 26px;box-shadow:var(--shadow-card);}
+.container::before{content:"";position:absolute;top:0;left:24px;right:24px;height:4px;border-radius:0 0 8px 8px;background:var(--grad-main);}
+h1{text-align:center;margin:8px 0 14px;font-size:24px;font-weight:700;letter-spacing:1px;background:var(--grad-main);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+h3{margin:20px 0 12px;font-size:16px;color:var(--primary-dark);font-weight:700;display:flex;align-items:center;gap:8px;}
+h3::before{content:"";width:5px;height:18px;border-radius:3px;background:var(--grad-main);flex:0 0 auto;}
+h4{margin:16px 0 10px;font-size:14px;color:#6b5563;font-weight:600;letter-spacing:.3px;}
+p{line-height:1.6;}
+input,textarea,select{width:100%;flex:1 1 0;min-width:0;padding:0 14px;height:var(--ctrl-h);border:1px solid var(--border);border-radius:12px;font-size:15px;background:#fff;color:var(--text-main);outline:none;transition:border-color .18s ease,box-shadow .18s ease;}
+textarea{height:auto;min-height:64px;padding:12px 14px;resize:vertical;line-height:1.5;}
+input:focus,textarea:focus,select:focus{border-color:#b989b4;box-shadow:0 0 0 4px rgba(168,107,148,.13);}
+button{padding:0 16px;height:var(--ctrl-h);border:none;border-radius:12px;color:#fff;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;flex:0 0 auto;box-shadow:0 4px 12px rgba(168,107,148,.18);transition:transform .12s ease,box-shadow .18s ease,filter .18s ease;}
+button:hover{filter:brightness(1.07);box-shadow:0 6px 16px rgba(168,107,148,.26);transform:translateY(-1px);}
+button:active{transform:scale(.96);}
+button:disabled{background:#bbb !important;box-shadow:none;cursor:not-allowed;opacity:.7;transform:none;}
+.btn-exit{background:linear-gradient(135deg,#b3a7ad,#9a8f96);}.btn-blue{background:linear-gradient(135deg,#9d8cc9,#7d6ab0);}.btn-green{background:linear-gradient(135deg,#6ec79a,#4da87d);}.btn-red{background:linear-gradient(135deg,#e8747f,#d24a5f);}.btn-orange{background:linear-gradient(135deg,#eda97e,#dd8a5a);}.btn-purple{background:var(--grad-main);}
+.btn-sm{height:34px;padding:0 12px;font-size:12.5px;border-radius:10px;box-shadow:0 3px 8px rgba(168,107,148,.16);}
+.row{display:flex;gap:var(--gap);margin:10px 0;flex-wrap:wrap;align-items:center;}
+.row>.grow{flex:1 1 0;min-width:0;}
+.stat-line{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;font-size:14px;margin:4px 0;}
+.btn-row{display:flex;gap:var(--gap);flex-wrap:wrap;margin:10px 0;}
+.btn-row>button{flex:1 1 0;min-width:120px;}
+.field{margin:10px 0;}
+.field label{display:block;font-size:13px;color:var(--text-sub);margin-bottom:6px;font-weight:500;}
+.field-hint{font-size:12px;color:var(--text-light);margin-top:6px;line-height:1.6;}
+.info-card{background:var(--grad-soft);padding:16px;border-radius:var(--radius-lg);margin-bottom:16px;border:1px solid rgba(232,205,224,.5);}
+.item-card{background:#fff;padding:14px 16px;border-radius:var(--radius-lg);margin:10px 0;box-shadow:var(--shadow-item);border:1px solid rgba(238,217,231,.55);transition:transform .15s ease,box-shadow .2s ease;}
+.item-card:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(168,107,148,.14);}
+.item-top{border:2px solid #ebbc88;}
+.item-expired{background:#f5f2f4;color:#867880;}
+.item-imp{border-left:4px solid #d35c71;}
+.item-norm{border-left:4px solid #e09668;}
+.item-casual{border-left:4px solid #5ab482;}
+.msg-title{font-weight:600;margin-bottom:8px;font-size:16px;color:var(--text-main);}
+.item-note{font-size:13px;color:#7c6c74;margin-top:6px;}
+.unlock-area{margin-top:12px;padding:14px;border:1px dashed var(--border-dash);border-radius:var(--radius-md);background:var(--card-soft);font-size:13px;overflow:hidden;}
+.unlock-area p{word-break:break-word;overflow-wrap:break-word;line-height:1.6;}
+.unlock-area button{white-space:normal;height:auto;min-height:36px;padding:8px 10px;font-size:12px;line-height:1.35;flex:1 1 0;min-width:0;box-shadow:0 2px 6px rgba(168,107,148,.12);}
+.unlock-area .btn-row>button{min-width:0;}
+.unlock-area .btn-row{gap:8px;margin:8px 0;}
+.chart-wrap{background:var(--grad-card);padding:16px;border-radius:var(--radius-lg);margin:16px 0;border:1px solid rgba(238,217,231,.5);box-shadow:var(--shadow-item);}
+.badge-wall{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:8px 0;}
+.badge-cell{background:#f3e9f2;border-radius:12px;padding:10px 4px;text-align:center;filter:grayscale(1);opacity:.45;border:1px solid transparent;transition:transform .15s ease,box-shadow .2s ease;}
+.badge-cell:hover{transform:translateY(-2px);}
+.badge-cell.got{filter:none;opacity:1;background:linear-gradient(145deg,#fdeef6,#f2dcf0);box-shadow:0 3px 10px rgba(196,120,168,.22);border-color:rgba(216,160,202,.5);}
+.badge-cell.got:hover{box-shadow:0 6px 14px rgba(196,120,168,.3);}
+.badge-cell-icon{font-size:26px;line-height:1.2;}
+.badge-cell-name{font-size:11.5px;color:#7c5fb0;margin-top:4px;}
+.badge-cell-name small{color:#c2602b;font-size:10px;margin-left:2px;}
+.badge-unlock-item{display:flex;gap:10px;align-items:center;background:#f6ecf5;border-radius:12px;padding:10px 12px;margin:8px 0;font-size:14px;box-shadow:0 2px 6px rgba(168,107,148,.08);}
+.secret-badge{display:inline-block;min-width:16px;height:16px;line-height:16px;border-radius:8px;background:#d46874;color:#fff;font-size:10px;padding:0 5px;margin-left:4px;vertical-align:middle;font-weight:600;box-shadow:0 2px 5px rgba(212,104,116,.4);}
+.secret-list{max-height:260px;overflow-y:auto;text-align:left;margin:10px 0;background:#faf2f7;border-radius:12px;padding:10px;font-size:13px;}
+.secret-item{margin:6px 0;padding:8px 12px;background:#fff;border-radius:10px;word-break:break-word;box-shadow:0 1px 4px rgba(168,107,148,.08);}
+.secret-item.unread{border-left:3px solid #d46874;background:#fdf3f5;}
+.secret-item .secret-head{font-size:11px;color:#94848c;margin-bottom:2px;}
+.online-badge{font-size:11px;font-weight:500;padding:3px 8px;border-radius:999px;margin-left:6px;vertical-align:middle;box-shadow:inset 0 0 0 1px rgba(0,0,0,.03);}
+.online-badge.online{background:#e8f6ec;color:#2d8a56;}
+.online-badge.offline{background:#f1eff2;color:#8a7f88;}
+.online-toast{position:fixed;top:18px;left:50%;transform:translateX(-50%);background:rgba(60,60,60,.92);color:#fff;padding:10px 18px;border-radius:999px;font-size:13px;z-index:1200;box-shadow:0 8px 24px rgba(0,0,0,.25);animation:toastIn .25s ease;max-width:88vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+@keyframes toastIn{from{opacity:0;transform:translate(-50%,-10px);}to{opacity:1;transform:translate(-50%,0);}}
+@media(max-width:360px){.badge-wall{grid-template-columns:repeat(3,1fr);}}
+.chart-canvas{width:100%;height:300px;}
+.warn-low{background:linear-gradient(135deg,#ffe9ec,#ffdfe4);color:#c03c4c;padding:12px 14px;border-radius:var(--radius-md);margin:10px 0;font-weight:500;font-size:14px;border:1px solid #f6c9cf;}
+.hide{display:none !important;}
+.top-bar{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;font-size:13px;color:#706068;}
+.top-bar .role-badge{font-weight:700;color:#fff;background:var(--grad-main);padding:6px 14px;border-radius:999px;box-shadow:0 3px 8px rgba(168,107,148,.25);cursor:pointer;transition:transform .15s ease,box-shadow .2s ease;}
+.top-bar .role-badge:hover{transform:translateY(-1px);box-shadow:0 5px 12px rgba(168,107,148,.32);}
+.sync-info{font-size:12px;color:var(--text-sub);display:inline-flex;align-items:center;gap:4px;flex-wrap:wrap;}
+.tag{display:inline-flex;align-items:center;padding:3px 10px;border-radius:8px;font-size:12px;margin-right:6px;line-height:1.4;border:1px solid rgba(0,0,0,.04);}
+.tag-imp{background:#fce5e8;color:#b73b4f;}
+.tag-norm{background:#fff1e6;color:#c2602b;}
+.tag-casual{background:#ebf7f0;color:#2d8a56;}
+.tag-wait{background:#f1eefa;color:#6347a2;}
+.stat-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0;}
+.stat-item{background:var(--grad-soft);padding:12px 8px;border-radius:var(--radius-md);text-align:center;font-size:14px;color:var(--text-main);border:1px solid rgba(232,205,224,.5);}
+.stat-item b{color:var(--primary-dark);font-size:18px;margin-left:4px;}
+.mood-item,.shop-item{background:linear-gradient(160deg,#fdf4fa,#f8ecf6);padding:12px 14px;border-radius:var(--radius-md);margin:8px 0;font-size:14px;border:1px solid rgba(238,217,231,.55);}
+.shop-item{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;}
+.shop-item .shop-info{flex:1 1 0;min-width:0;word-break:break-word;}
+.record-item{background:var(--primary-soft);padding:10px 14px;border-radius:var(--radius-md);margin:6px 0;font-size:14px;display:flex;justify-content:space-between;align-items:center;gap:10px;border:1px solid rgba(238,217,231,.5);}
+.record-item .record-name{flex:1 1 0;min-width:0;word-break:break-word;}
+.negative-point{color:#cf4858;font-weight:600;}
+.msg-list{max-height:260px;overflow-y:auto;background:linear-gradient(180deg,#fffdfe,#fdf6fb);border-radius:14px;padding:12px;margin-bottom:10px;border:1px solid var(--border);box-shadow:inset 0 1px 4px rgba(168,107,148,.05);}
+.msg-list::-webkit-scrollbar,.secret-list::-webkit-scrollbar{width:6px;}
+.msg-list::-webkit-scrollbar-thumb,.secret-list::-webkit-scrollbar-thumb{background:#e2c8dc;border-radius:3px;}
+.chat-row{display:flex;margin:8px 0;width:100%;}
+.chat-row.me{justify-content:flex-end;}
+.chat-row.other{justify-content:flex-start;}
+.chat-bubble{max-width:78%;padding:9px 13px;border-radius:16px;font-size:14px;word-break:break-word;line-height:1.5;box-shadow:0 2px 6px rgba(168,107,148,.12);}
+.chat-bubble.me{background:linear-gradient(135deg,#eadff6,#dfd0f0);border-bottom-right-radius:5px;}
+.chat-bubble.other{background:linear-gradient(135deg,#fef5fa,#fbe9f3);border-bottom-left-radius:5px;}
+.chat-bubble.recalled{background:#f2f0f1;color:#9a8f95;font-style:italic;box-shadow:none;}
+.recall-btn{display:inline-block;margin-top:4px;font-size:11px;color:#a86b94;cursor:pointer;background:none;border:none;padding:0;height:auto;flex:none;box-shadow:none;}
+.chat-head{font-size:11px;color:#9a8496;margin-bottom:4px;display:block;}
+.login-box{padding:28px 10px;text-align:center;}
+.room-box{padding:24px 8px;text-align:center;}
+.room-sub{color:var(--text-sub);margin-bottom:22px;font-size:14px;}
+.or-divider{margin:18px 0;color:var(--text-light);font-size:13px;position:relative;}
+.or-divider::before,.or-divider::after{content:"";position:absolute;top:50%;width:34%;height:1px;}
+.or-divider::before{left:0;background:linear-gradient(90deg,transparent,#ead9e5);}
+.or-divider::after{right:0;background:linear-gradient(90deg,#ead9e5,transparent);}
+.status-tip{font-size:12px;color:var(--text-sub);margin:10px 0 0;line-height:1.7;word-break:break-all;text-align:center;}
+.reset-pop{margin-top:16px;padding:14px;background:#f4eaf3;border-radius:16px;text-align:left;border:1px solid rgba(232,205,224,.5);}
+.gen-result-area{margin-top:14px;text-align:left;}
+.level-modal{position:fixed;inset:0;background:rgba(70,40,60,.45);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:999;display:flex;align-items:center;justify-content:center;}
+.level-modal-box{background:#fff;border-radius:22px;padding:30px 24px;text-align:center;max-width:300px;width:90%;box-shadow:var(--shadow-pop);animation:modalIn .28s cubic-bezier(.2,.9,.3,1.2);}
+@keyframes modalIn{from{opacity:0;transform:scale(.88) translateY(12px);}to{opacity:1;transform:scale(1) translateY(0);}}
+.level-up-icon{font-size:52px;margin-bottom:14px;}
+.level-up-title{font-size:20px;font-weight:700;color:var(--primary-dark);margin-bottom:8px;}
+.level-up-text{font-size:14px;color:var(--text-sub);margin-bottom:18px;line-height:1.7;white-space:pre-line;}
+#userLevelIcon{font-size:13px;letter-spacing:1px;margin-right:2px;}
+@media(max-width:480px){
+    body{padding:14px 10px;}
+    .container{padding:18px 12px;border-radius:22px;}
+    button{padding:0 12px;font-size:13px;}
+    .btn-row>button{min-width:0;font-size:12.5px;}
+    .btn-row{gap:8px;}
+    h1{font-size:20px;}
+    .field-hint{font-size:11.5px;}
+    .info-card{padding:14px;}
+    .item-card{padding:12px 14px;}
+    .chat-bubble{max-width:88%;}
+}
+@media(max-width:360px){
+    body{padding:12px 8px;}
+    .container{padding:16px 10px;border-radius:18px;}
+    button{font-size:12.5px;}
+    .btn-row>button{font-size:12px;}
+    .stat-row{grid-template-columns:1fr 1fr;gap:8px;}
+    .top-bar{font-size:12px;}
+}
+</style>
+</head>
+<body>
+<div class="container">
+<!-- 房间选择页 -->
+<div id="roomPage" class="room-box">
+<h1>✨时光备忘录2.0</h1>
+<p class="room-sub">双人云同步备忘录 · Supabase</p>
+<div id="cloudCreateArea">
+<div class="btn-row"><button class="btn-purple" onclick="createNewRoom()">➕ 创建新双人房间</button></div>
+<div id="roomGenResult" class="gen-result-area hide">
+<div class="field"><label>🔐生成房间码</label><input type="text" id="genRoomCodeReadonly" readonly></div>
+<div class="field"><label>🔑访问密钥</label><input type="text" id="genRoomPassReadonly" readonly></div>
+<div class="btn-row">
+<button class="btn-blue" onclick="copyWholeRoomInfo()">📋 一键复制房间信息</button>
+<button class="btn-green" onclick="confirmEnterGeneratedRoom()">✅ 确认进入该房间</button>
+</div>
+<p class="field-hint">复制整套信息发给伙伴，对方选择「加入已有房间」</p>
+</div>
+<div class="or-divider">或</div>
+<div class="btn-row"><button class="btn-green" onclick="pasteRoomInfo()">📋 一键粘贴房间信息</button></div>
+<p class="field-hint" style="text-align:center;">先复制对方发来的「房间码+访问密钥」，点此按钮自动填入下方</p>
+<div class="field"><label>🏷️ 房间配对码</label><input type="text" id="joinRoomCode" placeholder="输入6位房间码" autocomplete="off"></div>
+<div class="field"><label>🔒 房间访问密钥</label><input type="password" id="joinRoomPass" placeholder="输入访问密钥" autocomplete="off"></div>
+<div class="btn-row"><button class="btn-blue" onclick="joinExistRoom()">🚪 加入已有房间</button></div>
+</div>
+<div class="btn-row" style="margin-top:14px;"><button class="btn-exit" onclick="enterLocalMode()">📂 本地模式（无云同步）</button></div>
+<div id="roomStatusTip" class="status-tip"></div>
+</div>
+
+<!-- 登录页 -->
+<div id="loginPage" class="login-box hide">
+<h1>✨时光备忘录2.0</h1>
+<p style="color:var(--text-sub);margin-bottom:24px;font-size:14px">输入账号密码进入</p>
+<p id="rememberTip" class="hide" style="font-size:12px;color:#94848c;margin:-10px 0 14px;text-align:center;">💾 已记住上次登录密码，可直接点进入</p>
+<div class="field" style="text-align:left;"><label>🔑 登录密码</label><input type="password" id="pwdInput" placeholder="请输入登录密码" autocomplete="off"></div>
+<div class="btn-row"><button class="btn-purple" onclick="login()">➡️ 进入</button></div>
+<div style="margin-top:14px;"><button class="btn-exit btn-sm" onclick="toggleHide('resetPop')">❓ 忘记密码？</button></div>
+<div id="resetPop" class="reset-pop hide">
+<p style="font-size:14px;margin-bottom:10px">输入密保口令重置登录密码</p>
+<div class="field"><input type="password" id="secretResetPwd" placeholder="密保口令" autocomplete="off"></div>
+<div class="btn-row"><button class="btn-red" onclick="doResetPassword()">🔁 重置密码</button></div>
+<p class="field-hint">仅重置登录密码，业务数据不会丢失</p>
+</div>
+<div class="btn-row" style="margin-top:20px;"><button class="btn-exit" onclick="backToRoomPage()">⬅️ 返回房间配对</button></div>
+</div>
+
+<!-- 主业务页面 -->
+<div id="mainPage" class="hide">
+<div class="top-bar">
+<span class="role-badge" onclick="openNickModal()" style="cursor:pointer;" title="点击修改昵称">👤 <span id="userLevelIcon"></span><span id="userRole">-</span></span>
+<span class="sync-info" style="flex:1 1 0;">🏠 房间码 <span id="showRoomId" style="font-weight:600;color:#a474bd;">无</span></span>
+<button class="btn-exit" onclick="leaveRoom()">🚪 退出房间</button>
+</div>
+<h1>✨时光备忘录2.0</h1>
+<div id="lowPointWarn" class="warn-low hide">⚠️ 当前积分低于-100，仅查看模式，无法兑换商品、标记任务完成</div>
+<div class="info-card">
+<div class="stat-line"><span>💎 当前积分</span><span style="font-size:22px;font-weight:700;color:var(--primary-dark);"><span id="point">0</span> 分</span></div>
+<div class="stat-line"><span>📊 约定统计</span><span>总计 <b id="totalTask">0</b>｜已完成 <b id="doneTask">0</b>｜待兑现 <b id="waitTask">0</b>｜兑现率 <b id="finishRate">0</b>%</span></div>
+</div>
+<div class="info-card">
+<h3 style="display:flex;justify-content:space-between;align-items:center;"><span>💬 双人即时消息<span id="onlineBadge" class="online-badge offline">⚪ 好友离线</span></span><button class="btn-purple btn-sm" onclick="openSecretModal()">💌 悄悄话<span id="secretBadge" class="secret-badge hide">0</span></button></h3>
+<div id="instantMsgList" class="msg-list"></div>
+<div class="row" style="margin-bottom:0;"><input type="text" id="instantMsgInput" class="grow" placeholder="写句话发给伙伴" autocomplete="off"><button class="btn-purple" onclick="sendInstantMsg()">📤 发送</button></div>
+</div>
+<div class="info-card">
+<h3>🌿 情绪小记</h3>
+<div class="row">
+<select id="moodSelect" style="flex:0 0 auto;width:112px;"><option value="平静">😌平静</option><option value="开心">😊开心</option><option value="愉悦">🥰愉悦</option><option value="疲惫">😔疲惫</option><option value="烦躁">😤烦躁</option><option value="低落">😞低落</option></select>
+<input type="text" id="moodNote" class="grow" placeholder="记录当下心情">
+</div>
+<div class="btn-row"><button class="btn-purple" onclick="addMoodRecord()">💾 保存情绪</button></div>
+<div id="moodListWrap"></div>
+</div>
+<div class="info-card">
+<h3>🎁 积分商城 - 待兑换小事清单</h3>
+<div id="shopAdminArea" class="hide">
+<h4 id="shopTitleLabel">🔧 A伙伴新增商城商品</h4>
+<div class="row"><input type="text" id="shopGoodsName" class="grow" placeholder="商品名称"><input type="number" id="shopGoodsPoint" style="flex:0 0 120px;" placeholder="所需积分"></div>
+<div class="btn-row"><button class="btn-purple" onclick="addShopGoods()">➕ 添加商品</button></div>
+</div>
+<h4>📦 可兑换商品列表</h4>
+<div id="shopListWrap"></div>
+<h4 style="margin-top:12px;">📜 兑换历史</h4>
+<div id="shopRecordWrap"></div>
+</div>
+<div id="userTaskApplyArea" class="info-card hide">
+<h3>📮 发布积分任务申请</h3>
+<div class="field"><textarea id="applyTaskText" placeholder="申请完成的小事，如：陪我看完一部电影、一起做顿饭" rows="2"></textarea></div>
+<div class="field"><label>📝 私密随笔（仅申请人自己可见）</label><input type="text" id="applyTaskNote" placeholder="私密随笔"></div>
+<div class="btn-row"><button class="btn-purple" onclick="submitPointTask()">📮 提交申请</button></div>
+<p class="field-hint" id="applyHintLabel">只申请事项；审批通过后由A伙伴设置积分并发布任务，拒绝时会告知理由。</p>
+<h4 style="margin-top:12px;">📭 我的申请记录</h4>
+<div id="myPendingList"></div>
+</div>
+<div class="chart-wrap">
+<h3>📈 积分变化记录</h3>
+<div class="btn-row"><button class="btn-blue" onclick="switchChartFilter('all')">📊 全部</button><button class="btn-purple" onclick="switchChartFilter('7day')">🕒 近7天</button><button class="btn-orange" onclick="switchChartFilter('30day')">📅 近30天</button></div>
+<div class="stat-row"><div class="stat-item">最高<b id="statMax">0</b></div><div class="stat-item">最低<b id="statMin">0</b></div></div>
+<div class="stat-row"><div class="stat-item">累计增加<b id="statAdd">0</b></div><div class="stat-item">累计减少<b id="statSub">0</b></div></div>
+<div id="pointChart" class="chart-canvas"></div>
+</div>
+<div class="info-card">
+<h3>🏅 成就徽章 <span id="badgeCount" style="font-size:13px;color:#94848c;"></span></h3>
+<div id="badgeWall" class="badge-wall"></div>
+<p class="field-hint" id="badgeHintLabel">达成即解锁并弹窗恭喜；只显示当前登录者可获得的徽章：A伙伴专属（上架/审核）、B伙伴专属（申请/兑换）各归各，其余为双方共享成就，个人类（聊天/悄悄话/暖心）按各自进度显示。</p>
+</div>
+<div id="adminArea">
+<div>
+<h3 id="pendingTitleLabel">📮 待审批的任务申请（B伙伴申请）</h3>
+<div id="adminPendingList"></div>
+<p class="field-hint">同意后任务发布到「待兑现清单」，B完成标记后由你判断完成度并发积分。</p>
+</div>
+<h3>💫 新增一份小约定</h3>
+<div class="field"><textarea id="sendTaskText" placeholder="写下两个人之间想要完成的小事约定" rows="2"></textarea></div>
+<div class="field"><label>📝 私密随笔（仅我可见）</label><input type="text" id="sendTaskNote" placeholder="私密随笔"></div>
+<div class="row"><input type="number" id="sendPoint" class="grow" placeholder="完成可得积分" value="20"><select id="taskPriority" style="flex:0 0 108px;"><option value="imp">重要</option><option value="norm" selected>普通</option><option value="casual">随心</option></select></div>
+<div class="field"><label>⏰ 期望完成时间（选填）</label><input type="datetime-local" id="taskExpireTime"></div>
+<div class="row"><label style="display:flex;align-items:center;gap:8px;font-size:14px;flex:1 1 0;min-width:0;"><input type="checkbox" id="taskTopCheck" style="width:18px;height:18px;flex:none;">⭐ 置顶这条约定</label><button class="btn-purple" onclick="sendTaskMsg()">💾 保存约定</button></div>
+<div>
+<h3>🌷 积分 - 酌情扣减</h3>
+<div class="field"><label>➖ 扣减数值（正数）</label><input type="number" id="minusPointNum" value="10"></div>
+<div class="field"><label>📝 记录缘由</label><input type="text" id="minusPointReason"></div>
+<div class="btn-row"><button class="btn-red" onclick="minusPointManual()">✅ 确认调整</button></div>
+</div>
+<div>
+<h3>🌷 积分 - 酌情增加</h3>
+<div class="field"><label>➕ 增加积分</label><input type="number" id="addPointNum" value="10"></div>
+<div class="field"><label>📝 记录缘由</label><input type="text" id="addPointReason"></div>
+<div class="btn-row"><button class="btn-green" onclick="addPointManual()">✅ 确认调整</button></div>
+</div>
+<div>
+<h3>🔐 修改登录密码</h3>
+<div class="field"><label id="newAdminPwdLabel">A伙伴新密码</label><input type="password" id="newAdminPwd" autocomplete="off"></div>
+<div class="field"><label id="newUserPwdLabel">B伙伴新密码</label><input type="password" id="newUserPwd" autocomplete="off"></div>
+<div class="btn-row"><button class="btn-blue" onclick="savePassword()">💾 保存密码</button></div>
+</div>
+<div>
+<h3>🔑 设置密保口令（找回密码）</h3>
+<div class="field"><label>专属密保口令</label><input type="password" id="newSecretCode" autocomplete="off"></div>
+<div class="btn-row"><button class="btn-purple" onclick="saveSecretCode()">💾 保存密保口令</button></div>
+<p class="field-hint">务必牢记；遗忘只能依靠备份文件恢复。</p>
+</div>
+<div><h3>💌 等待确认完成的约定</h3><div id="adminConfirmTaskList"></div></div>
+<div><h3>✅ 已经完成的约定回顾</h3><div id="adminFinishTaskList"></div></div>
+<div>
+<h3>🧹 清除指定日期积分记录</h3>
+<div class="row"><input type="date" id="clearRecordsDate" class="grow" style="flex:1 1 0;min-width:0;"></div>
+<div class="btn-row"><button class="btn-red" onclick="clearPointRecordsByDate()">🗑️ 清除该日期积分记录</button></div>
+<p class="field-hint">按本地日期清除「积分变化记录（图表）」与「手动调整记录」中对应日期的条目；积分值本身不变，操作不可恢复，请谨慎使用。</p>
+</div>
+</div>
+<div><h3>📒 待兑现的小事清单</h3></div>
+<div id="msgList"></div>
+<h4>📜 手动积分调整记录</h4>
+<div id="recordStat" style="font-size:12px;color:#84747c;margin-bottom:6px;"></div>
+<div id="recordUnlockArea" class="unlock-area hide">
+<p id="unlockRuleTip">B伙伴查看变动记录需消耗积分（解锁过的永久可见）：</p>
+<div class="btn-row">
+<button class="btn-green" id="unlockPlusBtn" onclick="unlockRecordPlus()">➕ 加分记录 (5分)</button>
+<button class="btn-red" id="unlockMinusBtn" onclick="unlockRecordMinus()">➖ 减分记录 (10分)</button>
+</div>
+<p id="recordUnlockInfo" style="font-size:12px;color:#84747c;margin-top:8px;"></p>
+</div>
+<div id="exchangeRecord"></div>
+</div>
+</div>
+
+<!-- 升级恭喜弹窗 -->
+<div id="levelUpModal" class="level-modal hide">
+<div class="level-modal-box">
+<div id="levelUpIcon" class="level-up-icon"></div>
+<div class="level-up-title">🎉 恭喜升级！</div>
+<div id="levelUpText" class="level-up-text"></div>
+<button class="btn-purple" onclick="toggleHide('levelUpModal')">✅ 知道啦</button>
+</div>
+</div>
+
+<!-- 修改昵称弹窗 -->
+<div id="nickModal" class="level-modal hide">
+<div class="level-modal-box" style="width:min(360px,92%);">
+<div class="level-up-title">✏️ 修改我的昵称</div>
+<p class="field-hint" style="text-align:center;margin:4px 0 12px;">留空恢复默认「A伙伴/B伙伴」，昵称随房间云同步。</p>
+<input type="text" id="nickModalInput" class="grow" placeholder="输入新昵称" maxlength="12" style="width:100%;padding:10px 12px;box-sizing:border-box;border:1px solid #dcc6d8;border-radius:12px;font-size:15px;margin-bottom:12px;">
+<div class="btn-row"><button class="btn-purple" onclick="saveNickFromModal()">💾 保存</button><button class="btn-exit" onclick="toggleHide('nickModal')">取消</button></div>
+</div>
+</div>
+
+<!-- 成就解锁弹窗 -->
+<div id="badgeModal" class="level-modal hide">
+<div class="level-modal-box">
+<div class="level-up-title">🏅 恭喜解锁新成就！</div>
+<div id="badgeUnlockList" style="text-align:left;margin:10px 0;max-height:60vh;overflow-y:auto;"></div>
+<button class="btn-purple" onclick="toggleHide('badgeModal')">🎉 太棒了</button>
+</div>
+</div>
+
+<!-- 悄悄话对话框 -->
+<div id="secretModal" class="level-modal hide">
+<div class="level-modal-box" style="width:min(430px,94%);max-width:430px;">
+<div class="level-up-title">💌 悄悄话</div>
+<p style="font-size:12px;color:#94848c;margin:-4px 0 4px;">只有你们俩看得见的私密小纸条，对方上线时会弹窗提醒～</p>
+<div id="secretMsgList" class="secret-list"></div>
+<div class="row" style="margin-bottom:0;"><input type="text" id="secretMsgInput" class="grow" placeholder="写一句悄悄话" autocomplete="off"><button class="btn-purple" onclick="sendSecretMsg()">💌 发送</button></div>
+<div class="btn-row"><button class="btn-exit" onclick="toggleHide('secretModal')">关闭</button></div>
+</div>
+</div>
+
+<!-- 悄悄话未读提示弹窗 -->
+<div id="onlineToast" class="online-toast hide"></div>
+<div id="secretPopup" class="level-modal hide">
+<div class="level-modal-box">
+<div class="level-up-title">💌 收到悄悄话</div>
+<p style="font-size:12px;color:#94848c;margin:-4px 0 4px;">对方给你留了小纸条：</p>
+<div id="secretPopupList" style="text-align:left;margin:10px 0;max-height:60vh;overflow-y:auto;"></div>
+<button class="btn-purple" onclick="ackSecretPopup()">💗 知道了</button>
+</div>
+</div>
+
+<script>
+/* Supabase配置：填入 Project URL 与 anon key 即启用云同步；留空=本地模式（需先建表 love_rooms） */
+const SUPABASE_URL = "https://sgxiethpdwxijpmrakhy.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_GA4PFgLCgj7vTMXq0HklEQ_QFBWWmbI";
+
+let cloudMode = false;
+let supabase = null;
+try {
+    if (SUPABASE_URL && SUPABASE_ANON_KEY && window.supabase) {
+        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        cloudMode = true;
+    }
+} catch (e) {
+    console.error("Supabase初始化失败，进入本地模式", e);
+    cloudMode = false;
+}
+
+let currentRoomId = null;
+let currentRoomPasscode = null;
+let realtimeChannel = null;
+let localRoomVersion = 0;
+let tempCreateRoomId = null;
+let tempCreatePass = null;
+
+function getDefaultData() {
+    return {
+        version: 1, _ts: 0, point: 0, createTime: Date.now(),
+        msgList: [], exchangeRecords: [], waitConfirmTasks: [], finishTaskHistory: [],
+        pointHistory: [], moodList: [], shopGoods: [], shopRecords: [],
+        recordUnlockedPlus: false, recordUnlockedMinus: false, messages: [],
+        pendingTasks: [], lastLevel: 1,
+        careCount: 0, shopAddCount: 0, badges: {}, sendCount: { admin: 0, user: 0 }, secretMsgs: [], lastSeen: { admin: 0, user: 0 }
+    };
+}
+let pwdConfig = JSON.parse(localStorage.getItem("lovePwdConfig")) || { admin: "123456", user: "654321", secretCode: "iloveyou" };
+if (pwdConfig.nickA === undefined) pwdConfig.nickA = "";
+if (pwdConfig.nickB === undefined) pwdConfig.nickB = "";
+const MIN_POINT = -100;
+const MAX_EXCHANGE_DIFF = 100;
+let data = JSON.parse(localStorage.getItem("loveTaskData")) || getDefaultData();
+
+function ensureDataFields(d) {
+    if (!d) d = {};
+    if (!d.moodList) d.moodList = [];
+    if (!d.shopGoods) d.shopGoods = [];
+    if (!d.shopRecords) d.shopRecords = [];
+    if (!d.messages) d.messages = [];
+    if (!d.pointHistory) d.pointHistory = [];
+    if (!d.exchangeRecords) d.exchangeRecords = [];
+    if (!d.msgList) d.msgList = [];
+    if (!d.waitConfirmTasks) d.waitConfirmTasks = [];
+    if (!d.finishTaskHistory) d.finishTaskHistory = [];
+    if (!d.pendingTasks) d.pendingTasks = [];
+    if (!d._ts) d._ts = 0;
+    if (!d.version) d.version = 1;
+    if (!d.createTime) d.createTime = d._ts || Date.now();
+    if (d.careCount === undefined) d.careCount = 0;
+    if (d.shopAddCount === undefined) d.shopAddCount = 0;
+    if (!d.badges) d.badges = {};
+    if (!d.sendCount || typeof d.sendCount !== "object") {
+        const msgs = d.messages || [];
+        d.sendCount = { admin: msgs.filter(m => m.role === "admin").length, user: msgs.filter(m => m.role === "user").length };
+    }
+    if (!d.secretMsgs) d.secretMsgs = [];
+    if (!d.lastSeen || typeof d.lastSeen !== "object") d.lastSeen = { admin: 0, user: 0 };
+    if (d.recordUnlockedPlus === undefined) d.recordUnlockedPlus = d.recordUnlockedCount > 0 || d.recordViewUnlocked === true;
+    if (d.recordUnlockedMinus === undefined) d.recordUnlockedMinus = d.recordUnlockedCount > 0 || d.recordViewUnlocked === true;
+    if (d.lastLevel === undefined) d.lastLevel = Math.floor((d.point || 0) / 20) + 1;
+    return d;
+}
+ensureDataFields(data);
+let loginState = JSON.parse(sessionStorage.getItem("loveLoginState")) || { isLogin: false, role: "" };
+let chartFilter = "all";
+let pointChart = null;
+
+/* ---------------- 页面切换 ---------------- */
+function showPage(mode) {
+    document.getElementById("roomPage").classList.toggle("hide", mode !== "room");
+    document.getElementById("loginPage").classList.toggle("hide", mode !== "login");
+    document.getElementById("mainPage").classList.toggle("hide", mode !== "main");
+    if (mode === "main" && currentRoomId) {
+        document.getElementById("showRoomId").innerText = currentRoomId;
+    }
+    if (mode === "login") {
+        const pwdInput = document.getElementById("pwdInput");
+        const tip = document.getElementById("rememberTip");
+        if (pwdInput) {
+            let remembered = null;
+            try { remembered = JSON.parse(localStorage.getItem("loveRememberedLogin")); } catch (e) {}
+            if (remembered && remembered.pwd) {
+                if (!pwdInput.value) pwdInput.value = remembered.pwd;
+                if (tip) tip.classList.remove("hide");
+            } else {
+                if (tip) tip.classList.add("hide");
+            }
+        }
+    }
+}
+
+/* ---------------- 房间会话 ---------------- */
+function saveRoomSession(roomId, passcode) {
+    localStorage.setItem("loveRoomId", roomId);
+    localStorage.setItem("loveRoomPass", passcode);
+    currentRoomId = roomId; currentRoomPasscode = passcode;
+}
+function loadRoomSession() {
+    const rid = localStorage.getItem("loveRoomId");
+    const rpass = localStorage.getItem("loveRoomPass");
+    if (rid && rpass) {
+        currentRoomId = rid; currentRoomPasscode = rpass;
+        return true;
+    }
+    return false;
+}
+function clearRoomSession() {
+    localStorage.removeItem("loveRoomId"); localStorage.removeItem("loveRoomPass");
+    currentRoomId = null; currentRoomPasscode = null;
+    if (realtimeChannel) { try { supabase.removeChannel(realtimeChannel); } catch (e) {} realtimeChannel = null; }
+}
+function genRoomCode() {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    let s = "";
+    for (let i = 0; i < 6; i++) s += chars[Math.floor(Math.random() * chars.length)];
+    return s;
+}
+function genPasscode() {
+    return Math.random().toString(36).slice(2, 10);
+}
+
+/* ---------------- 创建新房间 ---------------- */
+async function createNewRoom() {
+    if (!cloudMode) { enterLocalMode(); return; }
+    const roomId = genRoomCode();
+    const passcode = genPasscode();
+    tempCreateRoomId = roomId; tempCreatePass = passcode;
+    let initData = getDefaultData();
+    try {
+        const localRaw = localStorage.getItem("loveTaskData");
+        if (localRaw) {
+            const ld = JSON.parse(localRaw);
+            if (ld && (ld.point !== 0 || (ld.msgList && ld.msgList.length > 0) || (ld.messages && ld.messages.length > 0))) {
+                initData = ensureDataFields(ld); initData.version = 1;
+            }
+        }
+    } catch (e) {}
+    const initPayload = { data: JSON.parse(JSON.stringify(initData)), pwdConfig: JSON.parse(JSON.stringify(pwdConfig)) };
+    try {
+        const { error } = await supabase.from("love_rooms").insert({ id: roomId, payload: initPayload, version: 1, passcode: passcode });
+        if (error) { alert("创建房间失败：" + error.message); return; }
+    } catch (err) {
+        alert("无法连接云端服务：" + err.message + "\n请确认已填写正确的Supabase配置并执行建表SQL，或改用本地模式。");
+        return;
+    }
+    document.getElementById("genRoomCodeReadonly").value = roomId;
+    document.getElementById("genRoomPassReadonly").value = passcode;
+    document.getElementById("roomGenResult").classList.remove("hide");
+    document.getElementById("roomStatusTip").innerText = "🎉 房间创建完成！复制整套信息发给伙伴，确认无误点「确认进入该房间」";
+}
+
+/* ---------------- 一键复制房间信息 ---------------- */
+async function copyWholeRoomInfo() {
+    const rc = document.getElementById("genRoomCodeReadonly").value.trim();
+    const pc = document.getElementById("genRoomPassReadonly").value.trim();
+    if (!rc || !pc) { alert("还没有生成房间信息，请先创建房间"); return; }
+    const txt = "房间码：" + rc + "\n访问密钥：" + pc;
+    let ok = false;
+    try {
+        if (navigator.clipboard) { await navigator.clipboard.writeText(txt); ok = true; }
+    } catch (e) {
+        const ta = document.createElement("textarea");
+        ta.style.position = "fixed"; ta.style.left = "-9999px"; ta.style.opacity = "0";
+        ta.value = txt; document.body.appendChild(ta); ta.select();
+        ok = document.execCommand("copy"); document.body.removeChild(ta);
+    }
+    ok ? alert("✅ 房间码+密钥复制成功，发给你的伙伴") : alert("❌ 复制失败，请手动复制输入框文字");
+}
+
+/* ---------------- 确认进入生成的房间 ---------------- */
+async function confirmEnterGeneratedRoom() {
+    if (!tempCreateRoomId || !tempCreatePass) { alert("请先创建房间"); return; }
+    saveRoomSession(tempCreateRoomId, tempCreatePass);
+    localRoomVersion = 1;
+    await subscribeRealtime();
+    await loadCloudRoomData();
+    tempCreateRoomId = null; tempCreatePass = null;
+    showPage("login");
+}
+
+/* ---------------- 一键粘贴房间信息（好友端） ---------------- */
+async function pasteRoomInfo() {
+    let txt = "";
+    try {
+        if (navigator.clipboard && navigator.clipboard.readText) {
+            txt = await navigator.clipboard.readText();
+        }
+    } catch (e) { txt = ""; }
+    if (!txt) {
+        alert("无法自动读取剪贴板\n请先长按复制对方发来的整套房间信息，再点此按钮；若仍失败请手动输入两个输入框");
+        return;
+    }
+    let found = false;
+    // 房间码：6位大写（不含I O 0 1的字符集）
+    const codeMatch = txt.match(/[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{6}/);
+    if (codeMatch) {
+        document.getElementById("joinRoomCode").value = codeMatch[0];
+        found = true;
+    }
+    // 访问密钥：8位小写字母数字
+    const passMatch = txt.match(/\b[a-z0-9]{8}\b/);
+    if (passMatch) {
+        document.getElementById("joinRoomPass").value = passMatch[0];
+        found = true;
+    }
+    if (found) {
+        alert("✅ 已自动填入房间码和访问密钥\n确认无误后点「🚪加入已有房间」");
+    } else {
+        alert("未识别到房间信息，请检查复制的文字是否为「房间码：XXXXXX 访问密钥：XXXXXXXX」格式");
+    }
+}
+
+/* ---------------- 加入已有房间 ---------------- */
+async function joinExistRoom() {
+    if (!cloudMode) { enterLocalMode(); return; }
+    const rid = document.getElementById("joinRoomCode").value.trim().toUpperCase();
+    const rpass = document.getElementById("joinRoomPass").value.trim();
+    if (!rid || !rpass) { alert("请填写房间码和访问密钥"); return; }
+    let roomRow;
+    try {
+        const res = await supabase.from("love_rooms").select("*").eq("id", rid).single();
+        roomRow = res.data;
+        if (res.error || !roomRow) { alert("房间不存在，请检查房间码"); return; }
+    } catch (err) {
+        alert("无法连接云端服务：" + err.message);
+        return;
+    }
+    if (roomRow.passcode !== rpass) { alert("访问密钥错误！"); return; }
+    saveRoomSession(rid, rpass);
+    localRoomVersion = roomRow.version;
+    await subscribeRealtime();
+    await loadCloudRoomData();
+    showPage("login");
+}
+
+/* ---------------- Realtime 订阅 ---------------- */
+async function subscribeRealtime() {
+    if (!cloudMode || !currentRoomId) return;
+    if (realtimeChannel) { try { supabase.removeChannel(realtimeChannel); } catch (e) {} realtimeChannel = null; }
+    realtimeChannel = supabase
+        .channel("room-" + currentRoomId)
+        .on("postgres_changes", {
+            event: "UPDATE", schema: "public", table: "love_rooms", filter: "id=eq." + currentRoomId
+        }, async (payload) => {
+            const newVer = payload.new.version;
+            if (newVer > localRoomVersion) { await loadCloudRoomData(); }
+        })
+        .subscribe();
+}
+
+/* ---------------- 好友在线状态 ---------------- */
+let presenceChannel = null;
+let otherOnline = false;
+let lastTipKey = "";
+let presenceOk = false;
+async function subscribePresence() {
+    if (!cloudMode || !currentRoomId || !loginState.isLogin || !supabase) return;
+    if (presenceChannel) return;
+    presenceChannel = supabase.channel("presence:" + currentRoomId, { config: { presence: { key: loginState.role } } });
+    presenceChannel
+        .on("presence", { event: "sync" }, () => { presenceOk = true; otherOnline = updateOnlineState(); })
+        .on("presence", { event: "join" }, ({ newPresences }) => {
+            presenceOk = true;
+            otherOnline = updateOnlineState();
+            newPresences.forEach(p => { if (p.role && p.role !== loginState.role) showOnlineTip(getRoleName(p.role), true); });
+        })
+        .on("presence", { event: "leave" }, ({ leftPresences }) => {
+            presenceOk = true;
+            otherOnline = updateOnlineState();
+            leftPresences.forEach(p => { if (p.role && p.role !== loginState.role) showOnlineTip(getRoleName(p.role), false); });
+        });
+    await presenceChannel.subscribe(async (status) => {
+        if (status === "SUBSCRIBED") {
+            presenceOk = true;
+            try { await presenceChannel.track({ role: loginState.role, online_at: Date.now() }); } catch (e) {}
+        } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+            presenceOk = false;
+            try { supabase.removeChannel(presenceChannel); } catch (e) {}
+            presenceChannel = null;
+        }
+    });
+}
+function stopPresence() {
+    if (presenceChannel) { try { supabase.removeChannel(presenceChannel); } catch (e) {} presenceChannel = null; }
+    presenceOk = false;
+    otherOnline = false;
+    renderOnlineBadge();
+}
+function updateOnlineState() {
+    if (!presenceChannel) { otherOnline = false; renderOnlineBadge(); return false; }
+    const state = presenceChannel.presenceState();
+    otherOnline = !!(state && state[OTHER_ROLE(loginState.role)] && state[OTHER_ROLE(loginState.role)].length);
+    renderOnlineBadge();
+    return otherOnline;
+}
+function renderOnlineBadge() {
+    const b = document.getElementById("onlineBadge");
+    if (!b) return;
+    const name = getRoleName(OTHER_ROLE(loginState.role));
+    let online;
+    if (presenceOk) {
+        online = !!otherOnline;
+    } else {
+        const otherKey = OTHER_ROLE(loginState.role);
+        online = Date.now() - ((data.lastSeen && data.lastSeen[otherKey]) || 0) < 120000;
+        if (online !== otherOnline) {
+            otherOnline = online;
+            showOnlineTip(name, online);
+        }
+    }
+    b.classList.toggle("online", !!online);
+    b.classList.toggle("offline", !online);
+    b.innerText = (online ? "🟢 " : "⚪ ") + name + (online ? " 在线" : " 离线");
+}
+if (!window._hbStarted) {
+    window._hbStarted = true;
+    setInterval(() => {
+        if (!cloudMode || !currentRoomId || !loginState.isLogin || !supabase) return;
+        if (presenceOk) return;
+        if (!data.lastSeen || typeof data.lastSeen !== "object") data.lastSeen = { admin: 0, user: 0 };
+        data.lastSeen[loginState.role] = Date.now();
+        save();
+    }, 40000);
+}
+function showOnlineTip(name, online) {
+    const key = (online ? "on" : "off") + name;
+    if (key === lastTipKey) return;
+    lastTipKey = key;
+    setTimeout(() => { if (lastTipKey === key) lastTipKey = ""; }, 3000);
+    const t = document.getElementById("onlineToast");
+    if (!t) return;
+    t.innerText = (online ? "💚 " : "🩶 ") + name + (online ? " 上线啦" : " 离线了");
+    t.classList.remove("hide");
+    clearTimeout(window._onlineToastTimer);
+    window._onlineToastTimer = setTimeout(() => t.classList.add("hide"), 2600);
+}
+
+/* ---------------- 拉取云端数据 ---------------- */
+async function loadCloudRoomData() {
+    if (!cloudMode || !currentRoomId) return false;
+    try {
+        const res = await supabase.from("love_rooms").select("*").eq("id", currentRoomId).single();
+        if (res.error || !res.data) { return false; }
+        const roomRow = res.data;
+        localRoomVersion = roomRow.version;
+        const cloudPayload = roomRow.payload;
+        if (cloudPayload) {
+            if (cloudPayload.data) data = ensureDataFields(cloudPayload.data);
+            if (cloudPayload.pwdConfig) pwdConfig = cloudPayload.pwdConfig;
+        }
+        localStorage.setItem("loveTaskData", JSON.stringify(data));
+        localStorage.setItem("lovePwdConfig", JSON.stringify(pwdConfig));
+        render();
+        return true;
+    } catch (e) {
+        console.error(e); render(); return false;
+    }
+}
+
+/* ---------------- 保存（本地 + 云端） ---------------- */
+async function save() {
+    if (loginState.isLogin && data) {
+        if (!data.lastSeen || typeof data.lastSeen !== "object") data.lastSeen = { admin: 0, user: 0 };
+        data.lastSeen[loginState.role] = Date.now();
+    }
+    data._ts = Date.now();
+    data.version = (data.version || 0) + 1;
+    localStorage.setItem("loveTaskData", JSON.stringify(data));
+    localStorage.setItem("lovePwdConfig", JSON.stringify(pwdConfig));
+    if (!cloudMode || !currentRoomId) return;
+    const payload = { data: JSON.parse(JSON.stringify(data)), pwdConfig: JSON.parse(JSON.stringify(pwdConfig)) };
+    const ver = data.version;
+    try {
+        const { error } = await supabase.from("love_rooms").update({ payload: payload, version: ver }).eq("id", currentRoomId);
+        if (error) throw error;
+        localRoomVersion = ver;
+    } catch (err) {
+        console.error("云端保存失败", err);
+    }
+}
+
+/* ---------------- 模式与导航 ---------------- */
+function enterLocalMode() {
+    document.getElementById("roomStatusTip").innerText = "📂 本地模式：数据仅保存在当前浏览器，两台设备互不互通";
+    showPage("login");
+}
+function backToRoomPage() {
+    loginState = { isLogin: false, role: "" }; sessionStorage.removeItem("loveLoginState");
+    sessionStorage.removeItem("secretNotified");
+    stopPresence();
+    clearRoomSession(); showPage("room");
+}
+function leaveRoom() {
+    if (!confirm("⚠️ 确认退出当前房间？退出后本机回到配对页，云端数据保留。")) return;
+    backToRoomPage();
+}
+
+/* ---------------- 业务逻辑 ---------------- */
+function getLevel(pts) { return Math.floor((pts || 0) / 20) + 1; }
+function getLevelIcons(pts) {
+    const L = getLevel(pts);
+    const crowns = Math.floor(L / 64);
+    const suns = Math.floor((L % 64) / 16);
+    const moons = Math.floor((L % 16) / 4);
+    const stars = L % 4;
+    return "👑".repeat(crowns) + "🌞".repeat(suns) + "🌙".repeat(moons) + "⭐".repeat(stars);
+}
+function checkLevelUp() {
+    const curLevel = getLevel(data.point);
+    if (curLevel > (data.lastLevel || 1)) {
+        data.lastLevel = curLevel;
+        showLevelUpModal(curLevel);
+        save();
+    }
+}
+function showLevelUpModal(level) {
+    document.getElementById("levelUpIcon").innerText = getLevelIcons((level - 1) * 20);
+    document.getElementById("levelUpText").innerText = "恭喜升至 Lv." + level + "！\n（每 20 积分升 1 级，继续加油攒积分～）";
+    document.getElementById("levelUpModal").classList.remove("hide");
+}
+function getRoleName(role) {
+    if (role === "admin") return pwdConfig.nickA ? pwdConfig.nickA : "💜A伙伴";
+    return pwdConfig.nickB ? pwdConfig.nickB : "🤍B伙伴";
+}
+function getRoleShort(role) {
+    if (role === "admin") return pwdConfig.nickA ? pwdConfig.nickA : "A伙伴";
+    return pwdConfig.nickB ? pwdConfig.nickB : "B伙伴";
+}
+function syncStaticRoleText() {
+    const nickA = pwdConfig.nickA, nickB = pwdConfig.nickB;
+    if (!nickA && !nickB) return;
+    const a = nickA || "A伙伴", b = nickB || "B伙伴";
+    ["applyHintLabel", "shopTitleLabel", "pendingTitleLabel", "newAdminPwdLabel", "newUserPwdLabel", "unlockRuleTip", "badgeHintLabel"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el && !el.dataset.roleSynced) {
+            el.dataset.roleSynced = "1";
+            el.innerHTML = el.innerHTML.replace(/A伙伴/g, a).replace(/B伙伴/g, b);
+        }
+    });
+}
+function openNickModal() {
+    const cur = loginState.role === "admin" ? (pwdConfig.nickA || "") : (pwdConfig.nickB || "");
+    document.getElementById("nickModalInput").value = cur;
+    document.getElementById("nickModal").classList.remove("hide");
+}
+async function saveNickFromModal() {
+    const v = document.getElementById("nickModalInput").value.trim();
+    if (loginState.role === "admin") { pwdConfig.nickA = v; }
+    else { pwdConfig.nickB = v; }
+    localStorage.setItem("lovePwdConfig", JSON.stringify(pwdConfig));
+    document.querySelectorAll("[data-role-synced]").forEach(el => delete el.dataset.roleSynced);
+    await save();
+    render();
+    toggleHide("nickModal");
+    alert("✅ 昵称保存成功");
+}
+async function submitPointTask() {
+    const t = document.getElementById("applyTaskText").value.trim();
+    const note = document.getElementById("applyTaskNote").value.trim();
+    if (!t) { alert("请填写申请的事项内容"); return; }
+    data.pendingTasks.push({ text: t, note: note, requester: "user", status: "pending", time: new Date().toLocaleString() });
+    await save(); render();
+    document.getElementById("applyTaskText").value = "";
+    document.getElementById("applyTaskNote").value = "";
+    alert("✅ 申请已提交，等待" + getRoleShort("admin") + "审批，积分由" + getRoleShort("admin") + "设置");
+}
+async function approvePendingTask(idx) {
+    const t = data.pendingTasks[idx]; if (!t) return;
+    if (t.status === "approved" || t.status === "rejected") { alert("该申请已处理过了"); return; }
+    const pt = Math.round(Number(document.getElementById("approvePoint_" + idx).value));
+    if (isNaN(pt) || pt <= 0) { alert("请先设置任务积分（大于0的整数）"); return; }
+    t.basePoint = pt;
+    data.msgList.push({ text: t.text, basePoint: t.basePoint, note: t.note, expireTime: null, priority: t.priority || "norm", top: false, requester: "user" });
+    t.status = "approved";
+    t.handledTime = new Date().toLocaleString();
+    await save(); render();
+    alert("✅ 已同意发布，任务积分：" + t.basePoint + "，申请人可见");
+}
+function toggleRejectBox(idx) { toggleHide("rejectBox_" + idx); }
+async function rejectPendingTask(idx) {
+    const t = data.pendingTasks[idx]; if (!t) return;
+    if (t.status === "approved" || t.status === "rejected") { alert("该申请已处理过了"); return; }
+    const inp = document.getElementById("rejectReason_" + idx);
+    t.rejectReason = inp ? inp.value.trim() : "";
+    t.status = "rejected";
+    t.handledTime = new Date().toLocaleString();
+    await save(); render();
+    alert(t.rejectReason ? "已拒绝，理由已告知申请人" : "已拒绝该任务申请");
+}
+let applyShowCount = 20;
+function loadMoreApply() {
+    applyShowCount += 20;
+    renderMyPendingList();
+}
+function renderMyPendingList() {
+    const w = document.getElementById("myPendingList"); if (!w) return;
+    w.innerHTML = "";
+    const mine = data.pendingTasks.filter(x => x.requester === loginState.role);
+    if (mine.length === 0) { w.innerHTML = '<div style="padding:8px 4px;color:#84747c;font-size:13px;">暂无申请记录</div>'; return; }
+    mine.slice(0, applyShowCount).forEach(t => {
+        const div = document.createElement("div"); div.className = "item-card";
+        let statusHtml = "";
+        if (t.status === "approved") statusHtml = '<div style="color:#2d8a56;font-size:13px;">✅ 已同意 · 任务积分：' + t.basePoint + ' · 已进入待兑现清单</div>';
+        else if (t.status === "rejected") statusHtml = '<div style="color:#b73b4f;font-size:13px;">❌ 已拒绝' + (t.rejectReason ? '｜理由：' + t.rejectReason : '') + '</div>';
+        else statusHtml = '<div style="color:#c2602b;font-size:13px;">⏳ 等待' + getRoleShort("admin") + '审批中…</div>';
+        div.innerHTML = '<div class="msg-title">📮 ' + t.text + '</div>' +
+            (t.note ? '<div class="item-note">📝 私密随笔：' + t.note + '</div>' : "") + statusHtml +
+            '<div style="color:#94848c;font-size:12px;">申请时间：' + t.time + (t.handledTime ? '｜处理：' + t.handledTime : "") + '</div>';
+        w.appendChild(div);
+    });
+    if (mine.length > applyShowCount) {
+        const more = document.createElement("div");
+        more.style.textAlign = "center";
+        more.innerHTML = '<button class="btn-blue btn-sm" onclick="loadMoreApply()">📜 查看更早申请（' + (mine.length - applyShowCount) + ' 条）</button>';
+        w.appendChild(more);
+    }
+}
+function renderAdminPendingList() {
+    const w = document.getElementById("adminPendingList"); if (!w) return;
+    w.innerHTML = "";
+    const pendingList = (data.pendingTasks || []).filter(x => x.status !== "approved" && x.status !== "rejected");
+    const handledCount = (data.pendingTasks || []).length - pendingList.length;
+    if (pendingList.length === 0) {
+        w.innerHTML = '<div style="padding:8px 4px;color:#84747c;font-size:13px;">暂无待审批的任务申请' + (handledCount > 0 ? '（已处理 ' + handledCount + ' 条，见' + getRoleShort("user") + '申请记录）' : '') + '</div>';
+        return;
+    }
+    pendingList.forEach(t => {
+        const idx = data.pendingTasks.indexOf(t);
+        const div = document.createElement("div"); div.className = "item-card";
+        div.innerHTML = '<div class="msg-title">📮 ' + t.text + '</div><div>申请人：' + getRoleName("user") + '</div>' +
+            (t.note ? '<div class="item-note" style="color:#9a8a92;">🔒 私密随笔仅申请人可见</div>' : "") +
+            '<div style="color:#94848c;font-size:12px;">申请时间：' + t.time + '</div>' +
+            '<div class="row"><input type="number" id="approvePoint_' + idx + '" class="grow" placeholder="设置任务积分" min="1" value="' + (t.basePoint || "") + '"><button class="btn-green" onclick="approvePendingTask(' + idx + ')">✅ 同意发布</button></div>' +
+            '<div class="row"><button class="btn-red" style="flex:1 1 0;" onclick="toggleRejectBox(' + idx + ')">❌ 拒绝（可选理由）</button></div>' +
+            '<div id="rejectBox_' + idx + '" class="hide"><div class="row"><input type="text" id="rejectReason_' + idx + '" class="grow" placeholder="拒绝理由（可留空）"><button class="btn-red" onclick="rejectPendingTask(' + idx + ')">确认拒绝</button></div></div>';
+        w.appendChild(div);
+    });
+}
+function isReadOnlyMode() { return data.point < MIN_POINT; }
+async function unlockRecordPlus() {
+    if (loginState.role !== "user") { alert("仅" + getRoleShort("user") + "需要解锁"); return; }
+    if (data.recordUnlockedPlus) { alert("加分记录已解锁"); return; }
+    if (data.point < 5) { alert("积分不足！当前积分：" + data.point); return; }
+    data.point -= 5;
+    data.recordUnlockedPlus = true;
+    pushPointHistory("解锁加分记录-5");
+    clampPoint(); await save(); render();
+    alert("✅ 已解锁全部加分记录，永久可见");
+}
+async function unlockRecordMinus() {
+    if (loginState.role !== "user") { alert("仅" + getRoleShort("user") + "需要解锁"); return; }
+    if (data.recordUnlockedMinus) { alert("减分记录已解锁"); return; }
+    if (data.point < 10) { alert("积分不足！当前积分：" + data.point); return; }
+    data.point -= 10;
+    data.recordUnlockedMinus = true;
+    pushPointHistory("解锁减分记录-10");
+    clampPoint(); await save(); render();
+    alert("✅ 已解锁全部减分记录，永久可见");
+}
+function toggleHide(id) { document.getElementById(id).classList.toggle("hide"); }
+function doResetPassword() {
+    const s = document.getElementById("secretResetPwd").value.trim();
+    if (s !== pwdConfig.secretCode) { alert("密保口令不正确，无法重置"); return; }
+    pwdConfig.admin = "123456"; pwdConfig.user = "654321";
+    localStorage.setItem("lovePwdConfig", JSON.stringify(pwdConfig));
+    try {
+        const remembered = JSON.parse(localStorage.getItem("loveRememberedLogin"));
+        if (remembered && remembered.pwd) {
+            remembered.pwd = remembered.role === "admin" ? "123456" : "654321";
+            localStorage.setItem("loveRememberedLogin", JSON.stringify(remembered));
+        }
+    } catch (e) {}
+    document.getElementById("secretResetPwd").value = "";
+    alert("✅ 重置完成！" + getRoleShort("admin") + "：" + pwdConfig.admin + "，" + getRoleShort("user") + "：" + pwdConfig.user); toggleHide("resetPop");
+}
+function saveSecretCode() {
+    const sc = document.getElementById("newSecretCode").value.trim();
+    if (!sc) { alert("密保口令不能为空"); return; }
+    pwdConfig.secretCode = sc; localStorage.setItem("lovePwdConfig", JSON.stringify(pwdConfig));
+    alert("✅ 密保口令保存成功"); document.getElementById("newSecretCode").value = "";
+}
+function isTaskExpired(task) {
+    if (!task.expireTime) return false;
+    return new Date() > new Date(task.expireTime);
+}
+function pushPointHistory(desc) {
+    data.pointHistory.push({ time: new Date().toISOString(), point: data.point, desc: desc });
+}
+function switchChartFilter(type) { chartFilter = type; renderChart(); }
+function renderChart() {
+    if (!pointChart) {
+        const dom = document.getElementById("pointChart");
+        if (!dom) return;
+        pointChart = echarts.init(dom);
+    }
+    let hl = [...data.pointHistory];
+    const now = Date.now();
+    if (chartFilter === "7day") hl = hl.filter(h => new Date(h.time).getTime() >= now - 7 * 86400000);
+    if (chartFilter === "30day") hl = hl.filter(h => new Date(h.time).getTime() >= now - 30 * 86400000);
+    const labels = hl.map(h => {
+        const d = new Date(h.time);
+        return (d.getMonth() + 1) + "/" + d.getDate() + " " + d.getHours() + ":" + String(d.getMinutes()).padStart(2, "0");
+    });
+    const pts = hl.map(h => h.point);
+    pointChart.setOption({
+        tooltip: { trigger: "axis" },
+        xAxis: { type: "category", data: labels },
+        yAxis: { type: "value", name: "积分" },
+        series: [{ name: "积分", type: "line", data: pts, smooth: true, areaStyle: { color: "rgba(168,107,148,0.12)" }, lineStyle: { color: "#a86b94" } }]
+    });
+    const allPts = data.pointHistory.map(x => x.point);
+    const max = allPts.length ? Math.max(...allPts) : 0;
+    const min = allPts.length ? Math.min(...allPts) : 0;
+    let sumAdd = 0, sumSub = 0, prev = 0;
+    data.pointHistory.forEach(h => {
+        const cur = Number(h.point) || 0;
+        const d = cur - prev; prev = cur;
+        if (d > 0) sumAdd += d; else if (d < 0) sumSub += Math.abs(d);
+    });
+    document.getElementById("statMax").innerText = max;
+    document.getElementById("statMin").innerText = min;
+    document.getElementById("statAdd").innerText = sumAdd;
+    document.getElementById("statSub").innerText = sumSub;
+}
+function calcTaskStat() {
+    const total = data.msgList.length + data.finishTaskHistory.length;
+    const done = data.finishTaskHistory.length;
+    const wait = data.msgList.length;
+    const rate = total > 0 ? Math.round((done / total) * 100) : 0;
+    document.getElementById("totalTask").innerText = total;
+    document.getElementById("doneTask").innerText = done;
+    document.getElementById("waitTask").innerText = wait;
+    document.getElementById("finishRate").innerText = rate;
+}
+async function addMoodRecord() {
+    const mt = document.getElementById("moodSelect").value;
+    const mn = document.getElementById("moodNote").value.trim();
+    const rn = getRoleShort(loginState.role);
+    data.moodList.unshift({ roleKey: loginState.role, role: rn, mood: mt, note: mn, time: new Date().toLocaleString() });
+    await save(); render(); document.getElementById("moodNote").value = "";
+}
+const MOOD_EMOJI = { "平静": "😌", "开心": "😊", "愉悦": "🥰", "疲惫": "😔", "烦躁": "😤", "低落": "😞" };
+function moodRoleKey(item) {
+    if (item.roleKey) return item.roleKey;
+    const aNames = [pwdConfig.nickA, "A伙伴"].filter(Boolean);
+    return aNames.indexOf(item.role) >= 0 ? "admin" : "user";
+}
+let moodShowCount = 12;
+function loadMoreMood() {
+    moodShowCount += 12;
+    renderMoodList();
+}
+function renderMoodList() {
+    const w = document.getElementById("moodListWrap"); w.innerHTML = "";
+    if (!data.moodList || data.moodList.length === 0) { w.innerHTML = '<div style="padding:8px 4px;color:#84747c;font-size:13px;">暂无情绪记录</div>'; return; }
+    data.moodList.slice(0, moodShowCount).forEach(item => {
+        const d = document.createElement("div"); d.className = "mood-item";
+        const key = moodRoleKey(item);
+        const lvIcon = key === "admin" ? "👑" : getLevelIcons(data.point);
+        const emoji = MOOD_EMOJI[item.mood] || "💭";
+        const name = item.role || getRoleName(key);
+        d.innerHTML = '<div><b style="color:#7d4a68;">' + lvIcon + " " + name + '</b> · ' + item.time + ' · <b>' + emoji + " " + item.mood + "</b></div>" + (item.note ? '<div style="margin-top:4px;color:#7c6c74;">' + item.note + "</div>" : "");
+        w.appendChild(d);
+    });
+    if (data.moodList.length > moodShowCount) {
+        const more = document.createElement("div");
+        more.style.textAlign = "center";
+        more.innerHTML = '<button class="btn-blue btn-sm" onclick="loadMoreMood()">📜 查看更早心情（' + (data.moodList.length - moodShowCount) + ' 条）</button>';
+        w.appendChild(more);
+    }
+}
+async function addShopGoods() {
+    const n = document.getElementById("shopGoodsName").value.trim();
+    const p = Number(document.getElementById("shopGoodsPoint").value);
+    if (!n || isNaN(p) || p <= 0) { alert("请填写商品名称与有效的积分"); return; }
+    data.shopGoods.push({ name: n, cost: p }); data.shopAddCount = (data.shopAddCount || 0) + 1; await save(); render();
+    document.getElementById("shopGoodsName").value = ""; document.getElementById("shopGoodsPoint").value = "";
+}
+async function exchangeGoods(idx) {
+    if (isReadOnlyMode()) { alert("⚠️ 当前积分过低，仅查看模式，不能兑换商品"); return; }
+    const g = data.shopGoods[idx]; if (!g) return;
+    const diff = Math.abs(data.point - g.cost);
+    if (diff > MAX_EXCHANGE_DIFF) { alert("❌ 不可兑换！当前积分" + data.point + "，商品需要" + g.cost + "积分。差值" + diff + "，最大允许差值" + MAX_EXCHANGE_DIFF); return; }
+    data.point -= g.cost;
+    data.shopRecords.unshift({ goodsName: g.name, cost: g.cost, time: new Date().toLocaleString() });
+    pushPointHistory("兑换商品" + g.name + "-" + g.cost);
+    data.shopGoods.splice(idx, 1);
+    clampPoint(); await save(); render();
+    alert("✅ 兑换【" + g.name + "】成功，消耗" + g.cost + "积分，当前积分：" + data.point + "\n该商品已兑换完，自动从商城下架");
+}
+async function delShopGoods(idx) { data.shopGoods.splice(idx, 1); await save(); render(); }
+function renderShop() {
+    const adminShopArea = document.getElementById("shopAdminArea");
+    const shopWrap = document.getElementById("shopListWrap");
+    const recWrap = document.getElementById("shopRecordWrap");
+    shopWrap.innerHTML = ""; recWrap.innerHTML = "";
+    loginState.role === "admin" ? adminShopArea.classList.remove("hide") : adminShopArea.classList.add("hide");
+    if (!data.shopGoods || data.shopGoods.length === 0) {
+        shopWrap.innerHTML = '<div style="padding:6px;color:#84747c;font-size:13px;">商城暂无商品，请' + getRoleShort("admin") + '添加</div>';
+    } else {
+        data.shopGoods.forEach((g, idx) => {
+            const div = document.createElement("div"); div.className = "shop-item";
+            const diffVal = Math.abs(data.point - g.cost);
+            const canExchange = (diffVal <= MAX_EXCHANGE_DIFF) && (!isReadOnlyMode());
+            const diffTip = '<span style="font-size:12px;color:#777">｜积分差值：' + diffVal + '（允许≤' + MAX_EXCHANGE_DIFF + '）</span>';
+            let btnHtml = "";
+            if (loginState.role === "user") {
+                btnHtml = canExchange ? '<button class="btn-green" onclick="exchangeGoods(' + idx + ')">兑换</button>' : '<button class="btn-green" disabled>不可兑换</button>';
+            }
+            if (loginState.role === "admin") { btnHtml = '<button class="btn-red" onclick="delShopGoods(' + idx + ')">删除</button>'; }
+            div.innerHTML = '<div class="shop-info">🎁' + g.name + "｜消耗积分：" + g.cost + diffTip + "</div><div class=\"row\">" + btnHtml + "</div>";
+            shopWrap.appendChild(div);
+        });
+    }
+    if (!data.shopRecords || data.shopRecords.length === 0) {
+        recWrap.innerHTML = '<div style="padding:6px;color:#84747c;font-size:13px;">暂无兑换记录</div>';
+    } else {
+        data.shopRecords.forEach(r => {
+            const div = document.createElement("div"); div.style.fontSize = "13px"; div.style.margin = "4px 0";
+            div.innerText = r.time + "｜兑换：" + r.goodsName + "，消耗" + r.cost + "积分";
+            recWrap.appendChild(div);
+        });
+    }
+}
+let chatShowCount = 30;
+function loadMoreChat() {
+    chatShowCount += 30;
+    renderInstantMessages();
+    const wrap = document.getElementById("instantMsgList");
+    if (wrap) wrap.scrollTop = 0;
+}
+function renderInstantMessages() {
+    const wrap = document.getElementById("instantMsgList");
+    if (!wrap) return; wrap.innerHTML = "";
+    const msgs = data.messages || [];
+    if (!msgs.length) {
+        wrap.innerHTML = '<div style="padding:8px 4px;color:#84747c;font-size:13px;">还没有消息，给对方发第一句话吧～</div>';
+        return;
+    }
+    if (msgs.length > chatShowCount) {
+        const more = document.createElement("div");
+        more.style.textAlign = "center";
+        more.innerHTML = '<button class="btn-blue btn-sm" onclick="loadMoreChat()">📜 查看更早消息（' + (msgs.length - chatShowCount) + ' 条）</button>';
+        wrap.appendChild(more);
+    }
+    const arr = msgs.slice(-chatShowCount);
+    const startIdx = Math.max(0, msgs.length - chatShowCount);
+    for (let i = startIdx; i < msgs.length; i++) {
+        const m = msgs[i];
+        const isMe = m.role === loginState.role;
+        const div = document.createElement("div");
+        div.className = isMe ? "chat-row me" : "chat-row other";
+        const bubble = document.createElement("div");
+        bubble.className = isMe ? "chat-bubble me" : "chat-bubble other";
+        const head = document.createElement("div");
+        head.className = "chat-head";
+        const lvIcon = m.role === "admin" ? "👑" : getLevelIcons(data.point);
+        head.innerText = lvIcon + " " + (m.roleName || getRoleName(m.role)) + " " + (m.time || "");
+        const body = document.createElement("div"); body.innerText = m.text;
+        bubble.appendChild(head); bubble.appendChild(body);
+        if (m.recalled) {
+            bubble.classList.add("recalled");
+            body.innerText = (isMe ? "你撤回了一条消息" : "对方撤回了一条消息");
+        } else if (isMe && m.time) {
+            const age = Date.now() - new Date(m.time).getTime();
+            if (!isNaN(age) && age >= 0 && age <= 60000) {
+                const rBtn = document.createElement("button");
+                rBtn.className = "recall-btn";
+                rBtn.innerText = "↩️ 撤回";
+                rBtn.onclick = function () { recallMsg(i); };
+                bubble.appendChild(rBtn);
+            }
+        }
+        div.appendChild(bubble); wrap.appendChild(div);
+    }
+    wrap.scrollTop = wrap.scrollHeight;
+}
+async function recallMsg(idx) {
+    const m = (data.messages || [])[idx];
+    if (!m || m.role !== loginState.role) return;
+    if (m.recalled) return;
+    const age = Date.now() - new Date(m.time).getTime();
+    if (isNaN(age) || age < 0 || age > 60000) { alert("⏱️ 仅可撤回发送 1 分钟内的消息"); return; }
+    m.recalled = true; m.text = "";
+    await save(); render();
+    alert("✅ 已撤回");
+}
+async function sendInstantMsg() {
+    const input = document.getElementById("instantMsgInput");
+    const txt = (input.value || "").trim();
+    if (!txt) return;
+    const roleName = getRoleName(loginState.role);
+    const msg = { role: loginState.role, roleName: roleName, text: txt, time: new Date().toLocaleString() };
+    if (!data.messages) data.messages = [];
+    data.messages.push(msg);
+    if (!data.sendCount || typeof data.sendCount !== "object") data.sendCount = { admin: 0, user: 0 };
+    data.sendCount[loginState.role] = (data.sendCount[loginState.role] || 0) + 1;
+    const latestMood = data.moodList && data.moodList[0];
+    if (latestMood && latestMood.mood && /低落|烦躁/.test(latestMood.mood) && latestMood.role !== roleName &&
+        (Date.now() - new Date(latestMood.time).getTime()) < 7 * 86400000) {
+        if (!data.careCount || typeof data.careCount !== "object") data.careCount = { admin: 0, user: 0 };
+        data.careCount[loginState.role] = (data.careCount[loginState.role] || 0) + 1;
+    }
+    input.value = "";
+    await save(); render();
+}
+/* ---------------- 悄悄话 ---------------- */
+const OTHER_ROLE = r => (r === "admin" ? "user" : "admin");
+function renderSecretBadge() {
+    const unread = (data.secretMsgs || []).filter(m => m.to === loginState.role && !m.read).length;
+    const b = document.getElementById("secretBadge");
+    if (b) { b.innerText = unread > 99 ? "99+" : unread; b.classList.toggle("hide", unread === 0); }
+}
+function renderSecretList() {
+    const w = document.getElementById("secretMsgList"); if (!w) return;
+    w.innerHTML = "";
+    const list = data.secretMsgs || [];
+    if (!list.length) { w.innerHTML = '<div style="color:#94848c;text-align:center;padding:14px;">还没有悄悄话，写一句吧～</div>'; return; }
+    list.forEach(m => {
+        const mine = m.from === loginState.role;
+        const div = document.createElement("div");
+        div.className = "secret-item" + (!mine && !m.read ? " unread" : "");
+        div.innerHTML = '<div class="secret-head">' + (mine ? "💜 我" : getRoleName(m.from)) + " · " + m.time + (mine ? "" : (!m.read ? ' <span style="color:#d46874;">· 未读</span>' : "")) + '</div><div>' + m.text + '</div>';
+        w.appendChild(div);
+    });
+    w.scrollTop = w.scrollHeight;
+}
+async function openSecretModal() {
+    renderSecretList();
+    document.getElementById("secretModal").classList.remove("hide");
+    const hasUnread = (data.secretMsgs || []).some(m => m.to === loginState.role && !m.read);
+    if (hasUnread) {
+        (data.secretMsgs || []).forEach(m => { if (m.to === loginState.role) m.read = true; });
+        await save(); renderSecretBadge();
+    }
+}
+async function sendSecretMsg() {
+    const input = document.getElementById("secretMsgInput");
+    const txt = (input.value || "").trim();
+    if (!txt) { alert("写一句悄悄话再发送吧"); return; }
+    if (!data.secretMsgs) data.secretMsgs = [];
+    data.secretMsgs.push({ from: loginState.role, to: OTHER_ROLE(loginState.role), text: txt, time: new Date().toLocaleString(), read: false });
+    input.value = "";
+    await save(); render();
+    renderSecretList();
+}
+function checkSecretNotify() {
+    if (!loginState.isLogin) return;
+    if (sessionStorage.getItem("secretNotified")) return;
+    const unread = (data.secretMsgs || []).filter(m => m.to === loginState.role && !m.read);
+    if (!unread.length) return;
+    sessionStorage.setItem("secretNotified", "1");
+    const w = document.getElementById("secretPopupList");
+    if (w) {
+        w.innerHTML = "";
+        unread.forEach(m => {
+            const div = document.createElement("div");
+            div.className = "badge-unlock-item";
+            div.innerHTML = '<span style="font-size:26px;">💌</span><div><b>' + getRoleName(m.from) + '</b> <span style="color:#94848c;font-size:11px;">' + m.time + '</span><div style="font-size:13px;color:#55444e;word-break:break-word;">' + m.text + '</div></div>';
+            w.appendChild(div);
+        });
+    }
+    document.getElementById("secretPopup").classList.remove("hide");
+    renderSecretBadge();
+}
+async function ackSecretPopup() {
+    (data.secretMsgs || []).forEach(m => { if (m.to === loginState.role) m.read = true; });
+    document.getElementById("secretPopup").classList.add("hide");
+    await save(); render();
+}
+function login() {
+    const pwd = document.getElementById("pwdInput").value.trim();
+    if (pwd === pwdConfig.admin.trim()) {
+        loginState.isLogin = true; loginState.role = "admin";
+    } else if (pwd === pwdConfig.user.trim()) {
+        loginState.isLogin = true; loginState.role = "user";
+    } else { alert("密码不对，请重新输入"); return; }
+    localStorage.setItem("loveRememberedLogin", JSON.stringify({ role: loginState.role, pwd: pwd }));
+    sessionStorage.removeItem("secretNotified");
+    chatShowCount = 30; moodShowCount = 12; applyShowCount = 20;
+    sessionStorage.setItem("loveLoginState", JSON.stringify(loginState)); render();
+}
+function savePassword() {
+    const na = document.getElementById("newAdminPwd").value.trim();
+    const nu = document.getElementById("newUserPwd").value.trim();
+    if (!na || !nu) { alert("两组密码都不能为空"); return; }
+    pwdConfig.admin = na; pwdConfig.user = nu; localStorage.setItem("lovePwdConfig", JSON.stringify(pwdConfig));
+    try {
+        const remembered = JSON.parse(localStorage.getItem("loveRememberedLogin"));
+        if (remembered && remembered.pwd) {
+            remembered.pwd = remembered.role === "admin" ? na : nu;
+            localStorage.setItem("loveRememberedLogin", JSON.stringify(remembered));
+        }
+    } catch (e) {}
+    alert("✅ 密码保存成功，请牢记新密码");
+    document.getElementById("newAdminPwd").value = ""; document.getElementById("newUserPwd").value = "";
+}
+function parseRecordPoint(s) {
+    const m = s.match(/([+\-\u2011]\d+(\.\d+)?)/);
+    return m ? Number(m[1]) : 0;
+}
+function clampPoint() { if (data.point < MIN_POINT) data.point = MIN_POINT; }
+async function addPointManual() {
+    const n = Number(document.getElementById("addPointNum").value);
+    const r = document.getElementById("addPointReason").value.trim();
+    if (isNaN(n) || n <= 0) { alert("请填写大于0的数值"); return; }
+    if (!r) { alert("请简单记录缘由"); return; }
+    data.point += n; clampPoint();
+    data.exchangeRecords.push({ name: "🌷 手动增加积分：" + r, cost: "+" + n, type: "plus", manual: true, time: new Date().toISOString() });
+    pushPointHistory("手动加分：" + r);
+    await save(); render();
+    alert("✅ 积分 +" + n + "，当前：" + data.point);
+    document.getElementById("addPointNum").value = ""; document.getElementById("addPointReason").value = "";
+}
+async function minusPointManual() {
+    const n = Number(document.getElementById("minusPointNum").value);
+    const r = document.getElementById("minusPointReason").value.trim();
+    if (isNaN(n) || n <= 0) { alert("请填写大于0的数值"); return; }
+    if (!r) { alert("请简单记录缘由"); return; }
+    data.point -= n; clampPoint();
+    data.exchangeRecords.push({ name: "🌙 手动扣减积分：" + r, cost: "-" + n, type: "minus", manual: true, time: new Date().toISOString() });
+    pushPointHistory("手动扣减：" + r);
+    await save(); render();
+    alert("✅ 积分 -" + n + "，当前：" + data.point);
+    document.getElementById("minusPointNum").value = ""; document.getElementById("minusPointReason").value = "";
+}
+async function sendTaskMsg() {
+    const t = document.getElementById("sendTaskText").value.trim();
+    const bp = Number(document.getElementById("sendPoint").value);
+    const note = document.getElementById("sendTaskNote").value.trim();
+    const et = document.getElementById("taskExpireTime").value;
+    const pri = document.getElementById("taskPriority").value;
+    const top = document.getElementById("taskTopCheck").checked;
+    if (!t || bp <= 0) { alert("请填写约定内容与积分"); return; }
+    data.msgList.push({ text: t, basePoint: bp, note: note, expireTime: et || null, priority: pri, top: top });
+    await save(); render();
+    document.getElementById("sendTaskText").value = "";
+    document.getElementById("sendTaskNote").value = "";
+    document.getElementById("taskExpireTime").value = "";
+    document.getElementById("taskTopCheck").checked = false;
+}
+async function removeTask(idx, tip) { data.msgList.splice(idx, 1); await save(); render(); alert("✅ 该约定已经" + tip); }
+async function submitTaskFinish(taskIdx) {
+    if (isReadOnlyMode()) { alert("⚠️ 当前积分过低，仅查看模式，不能标记任务完成"); return; }
+    const task = data.msgList[taskIdx]; if (!task) return;
+    if (isTaskExpired(task)) { alert("已经过了期望时间，无法标记完成"); return; }
+    data.waitConfirmTasks.push({ text: task.text, basePoint: task.basePoint, note: task.note, originIndex: taskIdx, requester: task.requester || "admin" });
+    data.msgList.splice(taskIdx, 1);
+    await save(); render(); alert("✅ 已标记做完，等待对方确认");
+}
+async function adminConfirmTask(confirmIdx, rate) {
+    const t = data.waitConfirmTasks[confirmIdx];
+    const gp = Math.round(t.basePoint * rate);
+    data.point += gp; clampPoint();
+    pushPointHistory("约定完成：" + t.text + "，获得" + gp);
+    data.finishTaskHistory.push({ text: t.text, basePoint: t.basePoint, getPoint: gp, rate: rate, note: t.note, requester: t.requester || "admin", time: new Date().toISOString() });
+    data.waitConfirmTasks.splice(confirmIdx, 1);
+    await save(); render();
+    alert("✅ 确认完成，完成度" + (rate * 100) + "%，积分+" + gp);
+}
+async function delRecord(idx) {
+    const rec = data.exchangeRecords[idx]; if (!rec) return;
+    const delta = parseRecordPoint(rec.cost);
+    data.point -= delta;
+    pushPointHistory("回滚记录：" + rec.name);
+    clampPoint();
+    data.exchangeRecords.splice(idx, 1);
+    await save(); render();
+    alert("✅ 记录已删除，积分已回滚");
+}
+async function clearPointRecordsByDate() {
+    const dt = document.getElementById("clearRecordsDate").value;
+    if (!dt) { alert("请先选择要清除的日期"); return; }
+    const target = new Date(dt + "T00:00:00");
+    const isSameDay = t => {
+        if (!t) return false;
+        const d = new Date(t);
+        return d.getFullYear() === target.getFullYear() && d.getMonth() === target.getMonth() && d.getDate() === target.getDate();
+    };
+    const pHit = data.pointHistory.filter(h => isSameDay(h.time)).length;
+    const eHit = data.exchangeRecords.filter(r => isSameDay(r.time)).length;
+    if (pHit + eHit === 0) { alert("该日期没有可清除的积分记录"); return; }
+    if (!confirm("⚠️ 确认清除 " + dt + " 的全部积分记录？\n积分变化记录：" + pHit + " 条，手动调整记录：" + eHit + " 条。\n积分值不变，此操作不可恢复！")) return;
+    data.pointHistory = data.pointHistory.filter(h => !isSameDay(h.time));
+    data.exchangeRecords = data.exchangeRecords.filter(r => !isSameDay(r.time));
+    await save(); render();
+    alert("✅ 已清除 " + dt + " 的积分记录 " + (pHit + eHit) + " 条（积分值不变）");
+}
+
+/* ---------------- 成就徽章系统 ---------------- */
+const BADGES = [
+    { id: "pact_first", name: "初结约定", icon: "🤝", cat: "约定", tiers: null, desc: "完成第一个约定" },
+    { id: "pact_10", name: "约定达人", icon: "🎯", cat: "约定", tiers: [10, 50, 100], desc: "累计完成约定 {n} 个" },
+    { id: "pact_perfect", name: "完美主义者", icon: "✨", cat: "约定", tiers: null, desc: "一次约定达成100%完成度" },
+    { id: "pact_week", name: "火焰周", icon: "🔥", cat: "约定", tiers: null, desc: "一周内完成5个约定" },
+    { id: "point_50", name: "首桶金", icon: "🪙", cat: "积分", tiers: null, desc: "积分达到50" },
+    { id: "point_200", name: "小富翁", icon: "💰", cat: "积分", tiers: null, desc: "积分达到200" },
+    { id: "point_500", name: "大富豪", icon: "👑", cat: "积分", tiers: null, desc: "积分达到500" },
+    { id: "point_streak", name: "攒分狂魔", icon: "📈", cat: "积分", tiers: null, desc: "连续7天有积分入账" },
+    { id: "level_10", name: "升级达人", icon: "🎓", cat: "积分", tiers: null, desc: "等级达到Lv.10" },
+    { id: "point_minus50", name: "黑历史", icon: "🕳️", cat: "积分", tiers: null, desc: "积分跌至-50（黑历史纪念）" },
+    { id: "mood_10", name: "心情记录员", icon: "📝", cat: "情绪", tiers: [10, 30, 100], desc: "累计记录情绪 {n} 条" },
+    { id: "mood_week", name: "气象站站长", icon: "🌤️", cat: "情绪", tiers: null, desc: "连续7天记录情绪" },
+    { id: "care_heart", name: "暖心大使", icon: "💝", cat: "情绪", tiers: [1, 5, 20], personal: true, desc: "对方低落时暖心回应 {n} 次" },
+    { id: "letter_5", name: "悄悄话高手", icon: "🕊️", cat: "情绪", tiers: [5, 20, 50], personal: true, desc: "累计收到悄悄话 {n} 条" },
+    { id: "chat_100", name: "话痨上线", icon: "💬", cat: "聊天", tiers: null, personal: true, desc: "累计发送100条消息" },
+    { id: "chat_500", name: "话痨王者", icon: "📣", cat: "聊天", tiers: [500, 1500, 3000], personal: true, desc: "累计发送消息 {n} 条" },
+    { id: "early_bird", name: "早鸟", icon: "☀️", cat: "聊天", tiers: null, personal: true, desc: "清晨6-8点聊天10次" },
+    { id: "night_owl", name: "夜猫子", icon: "🌙", cat: "聊天", tiers: null, personal: true, desc: "深夜23点后聊天10次" },
+    { id: "shop_first", name: "兑换初体验", icon: "🛍️", cat: "商城", tiers: null, only: "user", desc: "第一次兑换商城商品" },
+    { id: "shop_10", name: "购物狂", icon: "🛒", cat: "商城", tiers: [10, 30, 60], only: "user", desc: "累计兑换商品 {n} 次" },
+    { id: "shop_owner", name: "金牌店主", icon: "🏪", cat: "商城", tiers: [10, 30, 60], only: "admin", desc: "累计上架商品 {n} 个" },
+    { id: "day_30", name: "甜蜜满月", icon: "🍰", cat: "陪伴", tiers: null, desc: "一起使用满30天" },
+    { id: "day_100", name: "百日纪念", icon: "💍", cat: "陪伴", tiers: null, desc: "一起使用满100天" },
+    { id: "day_365", name: "周年快乐", icon: "🎂", cat: "陪伴", tiers: null, desc: "一起使用满365天" },
+    { id: "apply_first", name: "勇敢申请", icon: "💪", cat: "申请", tiers: null, only: "user", desc: "提交第一个积分申请" },
+    { id: "apply_approved", name: "提案通过", icon: "✅", cat: "申请", tiers: [1, 10, 30], only: "user", desc: "申请被同意发布 {n} 次" },
+    { id: "admin_handle", name: "审慎审核", icon: "⚖️", cat: "申请", tiers: [10, 50, 100], only: "admin", desc: "处理任务申请 {n} 个" },
+    { id: "both_way", name: "双向奔赴", icon: "🤝", cat: "申请", tiers: null, desc: "双方各完成5个约定" }
+];
+function badgeKey(b) { return b.personal ? b.id + "_" + loginState.role : b.id; }
+function badgeVisible(b) { return !b.only || b.only === loginState.role; }
+function maxConsecutiveDays(times) {
+    if (!times || !times.length) return 0;
+    const set = new Set(times.map(s => new Date(s).toISOString().slice(0, 10)));
+    const days = [...set].sort();
+    let best = 1, cur = 1;
+    for (let i = 1; i < days.length; i++) {
+        const diff = Math.round((new Date(days[i]) - new Date(days[i - 1])) / 86400000);
+        if (diff === 1) { cur++; best = Math.max(best, cur); } else { cur = 1; }
+    }
+    return best;
+}
+function countMsgsInHours(hStart, hEnd) {
+    let c = 0;
+    data.messages.forEach(m => {
+        if (m.role !== loginState.role || !m.time) return;
+        const h = new Date(m.time).getHours();
+        if (h >= hStart && h < hEnd) c++;
+    });
+    return c;
+}
+function daysUsed() {
+    const t0 = data.createTime || Date.now();
+    return Math.max(0, Math.floor((Date.now() - t0) / 86400000));
+}
+function badgeTier(b) {
+    const d = data;
+    let val = 0;
+    switch (b.id) {
+        case "pact_first": val = d.finishTaskHistory.length >= 1 ? 1 : 0; break;
+        case "pact_10": val = d.finishTaskHistory.length; break;
+        case "pact_perfect": val = d.finishTaskHistory.some(h => h.rate === 1) ? 1 : 0; break;
+        case "pact_week": val = d.finishTaskHistory.filter(h => h.time && (Date.now() - new Date(h.time).getTime()) < 7 * 86400000).length >= 5 ? 1 : 0; break;
+        case "point_50": val = d.point >= 50 ? 1 : 0; break;
+        case "point_200": val = d.point >= 200 ? 1 : 0; break;
+        case "point_500": val = d.point >= 500 ? 1 : 0; break;
+        case "point_streak": val = maxConsecutiveDays(d.pointHistory.map(h => h.time)) >= 7 ? 1 : 0; break;
+        case "level_10": val = getLevel(d.point) >= 10 ? 1 : 0; break;
+        case "point_minus50": val = d.point <= -50 ? 1 : 0; break;
+        case "mood_10": val = d.moodList.length; break;
+        case "mood_week": val = maxConsecutiveDays(d.moodList.map(m => m.time)) >= 7 ? 1 : 0; break;
+        case "care_heart": val = (d.careCount && d.careCount[loginState.role]) || 0; break;
+        case "letter_5": val = (d.secretMsgs || []).filter(m => m.to === loginState.role).length; break;
+        case "chat_100": val = (d.sendCount && d.sendCount[loginState.role]) || 0; break;
+        case "chat_500": val = (d.sendCount && d.sendCount[loginState.role]) || 0; break;
+        case "early_bird": val = countMsgsInHours(6, 8) >= 10 ? 1 : 0; break;
+        case "night_owl": val = (countMsgsInHours(23, 24) + countMsgsInHours(0, 5)) >= 10 ? 1 : 0; break;
+        case "shop_first": val = d.shopRecords.length >= 1 ? 1 : 0; break;
+        case "shop_10": val = d.shopRecords.length; break;
+        case "shop_owner": val = d.shopAddCount || 0; break;
+        case "day_30": val = daysUsed() >= 30 ? 1 : 0; break;
+        case "day_100": val = daysUsed() >= 100 ? 1 : 0; break;
+        case "day_365": val = daysUsed() >= 365 ? 1 : 0; break;
+        case "apply_first": val = d.pendingTasks.filter(x => x.requester === "user").length >= 1 ? 1 : 0; break;
+        case "apply_approved": val = d.pendingTasks.filter(x => x.requester === "user" && x.status === "approved").length; break;
+        case "admin_handle": val = d.pendingTasks.filter(x => x.status === "approved" || x.status === "rejected").length; break;
+        case "both_way": val = (d.finishTaskHistory.filter(h => h.requester === "user").length >= 5 && d.finishTaskHistory.filter(h => h.requester === "admin").length >= 5) ? 1 : 0; break;
+    }
+    if (!b.tiers) return val ? 1 : 0;
+    let t = 0;
+    for (let i = 0; i < b.tiers.length; i++) if (val >= b.tiers[i]) t = i + 1;
+    return t;
+}
+function renderBadgeWall() {
+    const w = document.getElementById("badgeWall");
+    if (!w) return;
+    w.innerHTML = "";
+    let got = 0;
+    const visible = BADGES.filter(badgeVisible);
+    visible.forEach(b => {
+        const t = badgeTier(b);
+        if (t) got++;
+        const div = document.createElement("div");
+        div.className = "badge-cell" + (t ? " got" : "");
+        const tierName = t && b.tiers ? ["铜", "银", "金"][t - 1] : "";
+        div.innerHTML = '<div class="badge-cell-icon">' + b.icon + '</div><div class="badge-cell-name">' + b.name + (tierName ? '<small>' + tierName + '</small>' : "") + '</div>';
+        div.title = b.desc.replace("{n}", b.tiers ? b.tiers[Math.max(t, 1) - 1] : "");
+        w.appendChild(div);
+    });
+    const stat = document.getElementById("badgeCount");
+    if (stat) stat.innerText = got + " / " + visible.length;
+}
+function checkBadgeUnlocks() {
+    if (!loginState.isLogin) return;
+    const unlocks = [];
+    BADGES.filter(badgeVisible).forEach(b => {
+        const t = badgeTier(b);
+        if (!t) return;
+        const key = badgeKey(b);
+        const prev = data.badges[key] || 0;
+        if (t > prev) {
+            data.badges[key] = t;
+            unlocks.push({ b: b, t: t });
+        }
+    });
+    if (unlocks.length) {
+        save();
+        const w = document.getElementById("badgeUnlockList");
+        if (w) {
+            w.innerHTML = "";
+            unlocks.forEach(u => {
+                const div = document.createElement("div");
+                div.className = "badge-unlock-item";
+                const tierName = u.b.tiers ? ["青铜", "白银", "黄金"][u.t - 1] : "";
+                div.innerHTML = '<span style="font-size:30px;">' + u.b.icon + '</span><div><b>' + u.b.name + '</b>' + (tierName ? ' <span style="color:#a86b94;">' + tierName + '</span>' : "") +
+                    '<div style="font-size:12px;color:#84747c;">' + u.b.desc.replace("{n}", u.b.tiers ? u.b.tiers[u.t - 1] : "") + '</div></div>';
+                w.appendChild(div);
+            });
+            document.getElementById("badgeModal").classList.remove("hide");
+        }
+    }
+}
+
+/* ---------------- 渲染 ---------------- */
+function render() {
+    if (!loginState.isLogin) { showPage("login"); return; }
+    document.getElementById("loginPage").classList.add("hide");
+    document.getElementById("mainPage").classList.remove("hide");
+    if (currentRoomId) {
+        document.getElementById("showRoomId").innerText = currentRoomId;
+    }
+    const warnDom = document.getElementById("lowPointWarn");
+    isReadOnlyMode() ? warnDom.classList.remove("hide") : warnDom.classList.add("hide");
+    const roleText = getRoleName(loginState.role);
+    document.getElementById("userRole").innerText = roleText;
+    syncStaticRoleText();
+    const adminArea = document.getElementById("adminArea");
+    loginState.role === "admin" ? adminArea.classList.remove("hide") : adminArea.classList.add("hide");
+    const pointDom = document.getElementById("point"); pointDom.innerText = data.point;
+    data.point < 0 ? pointDom.classList.add("negative-point") : pointDom.classList.remove("negative-point");
+    calcTaskStat(); renderMoodList(); renderInstantMessages(); renderShop();
+    const applyArea = document.getElementById("userTaskApplyArea");
+    if (loginState.role === "user") { applyArea.classList.remove("hide"); renderMyPendingList(); }
+    else { applyArea.classList.add("hide"); }
+    renderAdminPendingList();
+    const box = document.getElementById("msgList"); box.innerHTML = "";
+    const sortedTasks = [...data.msgList].sort((a, b) => {
+        if (!!a.top && !b.top) return -1;
+        if (!a.top && !!b.top) return 1;
+        return 0;
+    });
+    sortedTasks.forEach((msg) => {
+        const realIndex = data.msgList.indexOf(msg);
+        const div = document.createElement("div");
+        const expired = isTaskExpired(msg);
+        let priClass = "", priText = "";
+        if (msg.priority === "imp") { priClass = "item-imp"; priText = "重要"; }
+        else if (msg.priority === "norm") { priClass = "item-norm"; priText = "普通"; }
+        else if (msg.priority === "casual") { priClass = "item-casual"; priText = "随心"; }
+        div.className = expired ? "item-card item-expired" : (msg.top ? "item-card item-top " + priClass : "item-card " + priClass);
+        let html = '<div class="msg-title">💫约定：' + msg.text + "</div><div><span class=\"tag tag-" + msg.priority + "\">" + priText + '</span><span class="tag tag-wait">待兑现</span></div>';
+        if (msg.requester === "user") html += '<div style="color:#7c5fb0;font-size:12px;">📮 由' + getRoleShort("user") + '申请发布</div>';
+        if (msg.top) html += '<div style="color:#c48744">⭐ 置顶约定</div>';
+        if (expired) html += "<div>⚠️ 已过期望完成时间</div>";
+        if (msg.expireTime) {
+            const dt = new Date(msg.expireTime);
+            html += "<div>期望时间：" + dt.toLocaleString() + "</div>";
+        }
+        const noteOwner = msg.requester === "user" ? "user" : "admin";
+        if (loginState.role === noteOwner && msg.note) {
+            html += '<div class="item-note">📝 私密随笔：' + msg.note + "</div>";
+        }
+        html += "<div>完成可得积分：" + msg.basePoint + "</div>";
+        if (!expired && loginState.role === "user") {
+            if (isReadOnlyMode()) {
+                html += '<div style="color:#c03c4c;font-size:13px;">🔒 积分过低，仅查看，不可标记完成</div>';
+            } else {
+                html += '<div class="row"><button class="btn-orange" onclick="submitTaskFinish(' + realIndex + ')">标记已做完</button></div>';
+            }
+        }
+        if (loginState.role === "admin") {
+            html += '<div class="row"><button class="btn-blue" onclick="removeTask(' + realIndex + ',\'撤回\')">撤回约定</button><button class="btn-red" onclick="removeTask(' + realIndex + ',\'删除\')">删除约定</button></div>';
+        }
+        div.innerHTML = html; box.appendChild(div);
+    });
+
+    const adminConfirmBox = document.getElementById("adminConfirmTaskList"); adminConfirmBox.innerHTML = "";
+    data.waitConfirmTasks.forEach((task, idx) => {
+        const div = document.createElement("div"); div.className = "item-card";
+        div.innerHTML = '<div class="msg-title">💌 待确认：' + task.text + "</div><div>积分：" + task.basePoint + "</div>" +
+            (task.note ? (task.requester === "user" ? '<div class="item-note" style="color:#9a8a92;">🔒 私密随笔仅申请人可见</div>' : '<div class="item-note">📝 随笔：' + task.note + "</div>") : "") +
+            '<div class="row"><button class="btn-exit" onclick="adminConfirmTask(' + idx + ',0)">0%</button><button class="btn-blue" onclick="adminConfirmTask(' + idx + ',0.5)">50%</button><button class="btn-green" onclick="adminConfirmTask(' + idx + ',1)">100%</button></div>';
+        adminConfirmBox.appendChild(div);
+    });
+
+    const finishBox = document.getElementById("adminFinishTaskList"); finishBox.innerHTML = "";
+    if (data.finishTaskHistory.length === 0) {
+        finishBox.innerHTML = '<div style="padding:10px;color:#84747c">还没有已经完成的约定</div>';
+    } else {
+        data.finishTaskHistory.forEach(h => {
+            const div = document.createElement("div"); div.className = "item-card";
+            div.innerHTML = "<div>✅ " + h.text + "</div><div>基础分：" + h.basePoint + "｜实际获得：" + h.getPoint + "｜完成度：" + (h.rate * 100) + "%</div>" +
+                (h.note ? (h.requester === "user" ? '<div class="item-note" style="color:#9a8a92;">🔒 私密随笔仅申请人可见</div>' : '<div class="item-note">📝 随笔：' + h.note + "</div>") : "");
+            finishBox.appendChild(div);
+        });
+    }
+
+    const recUnlock = document.getElementById("recordUnlockArea");
+    const recBox = document.getElementById("exchangeRecord"); recBox.innerHTML = "";
+    const recList = (data.exchangeRecords || []).filter(r => r && (r.manual === true || (r.name && r.name.indexOf("手动") >= 0)));
+    const recTotal = recList.length;
+    const plusUnlocked = !!data.recordUnlockedPlus;
+    const minusUnlocked = !!data.recordUnlockedMinus;
+    const isPlusRec = r => r.type ? r.type === "plus" : String(r.cost || "").startsWith("+");
+    let plusCount = 0, minusCount = 0;
+    recList.forEach(r => { isPlusRec(r) ? plusCount++ : minusCount++; });
+    const hasPlus = plusCount > 0, hasMinus = minusCount > 0;
+    const statEl = document.getElementById("recordStat");
+    if (statEl) statEl.innerText = "📊 手动调整记录：加分 " + plusCount + " 条 ｜ 减分 " + minusCount + " 条";
+    if (loginState.role === "admin") {
+        recUnlock.classList.add("hide");
+    } else {
+        const needUnlock = (hasPlus && !plusUnlocked) || (hasMinus && !minusUnlocked);
+        if (recTotal === 0 || !needUnlock) {
+            recUnlock.classList.add("hide");
+        } else {
+            recUnlock.classList.remove("hide");
+            const plusBtn = document.getElementById("unlockPlusBtn");
+            const minusBtn = document.getElementById("unlockMinusBtn");
+            if (plusBtn) plusBtn.classList.toggle("hide", !hasPlus || plusUnlocked);
+            if (minusBtn) minusBtn.classList.toggle("hide", !hasMinus || minusUnlocked);
+            let info = "";
+            if (hasPlus) info += "加分：" + (plusUnlocked ? "✅已解锁" : "🔒未解锁");
+            if (hasPlus && hasMinus) info += " ｜ ";
+            if (hasMinus) info += "减分：" + (minusUnlocked ? "✅已解锁" : "🔒未解锁");
+            document.getElementById("recordUnlockInfo").innerText = info;
+        }
+    }
+    if (loginState.role === "admin" || plusUnlocked || minusUnlocked) {
+        if (recTotal === 0) {
+            recBox.innerHTML = '<div style="padding:10px;color:#84747c">暂无手动调整记录</div>';
+        } else {
+            recList.forEach((r, idx) => {
+                if (loginState.role === "user") {
+                    if (isPlusRec(r) && !plusUnlocked) return;
+                    if (!isPlusRec(r) && !minusUnlocked) return;
+                }
+                const div = document.createElement("div"); div.className = "record-item";
+                div.innerHTML = '<div class="record-name">' + r.name + "，" + r.cost + "</div>" +
+                    (loginState.role === "admin" ? '<button class="btn-exit btn-sm" onclick="delRecord(' + idx + ')">回滚</button>' : "");
+                recBox.appendChild(div);
+            });
+        }
+    }
+    renderChart();
+    const lvIcon = document.getElementById("userLevelIcon");
+    if (lvIcon) lvIcon.innerText = getLevelIcons(data.point);
+    checkLevelUp();
+    renderBadgeWall();
+    checkBadgeUnlocks();
+    renderSecretBadge();
+    checkSecretNotify();
+    renderOnlineBadge();
+    subscribePresence();
+}
+
+/* ---------------- 初始化 ---------------- */
+window.addEventListener("load", function () {
+    showPage("room");
+    if (cloudMode) {
+        if (loadRoomSession()) {
+            document.getElementById("joinRoomCode").value = currentRoomId;
+            document.getElementById("joinRoomPass").value = currentRoomPasscode;
+            document.getElementById("roomStatusTip").innerText = "🕘 上次房间已自动填入，点击「加入已有房间」即可进入";
+        } else {
+            document.getElementById("roomStatusTip").innerText = "☁️ 云同步已开启，创建或加入房间开始使用";
+        }
+    } else {
+        document.getElementById("roomStatusTip").innerText = "⚠️ 未配置Supabase，当前为本地模式";
+    }
+});
+</script>
+</body>
+</html>
