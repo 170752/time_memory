@@ -627,6 +627,17 @@ let presenceChannel = null;
 let otherOnline = false;
 let lastTipKey = "";
 let presenceOk = false;
+let otherLastSeen = 0;
+function timeAgo(ts) {
+    if (!ts) return "离线";
+    const diff = Date.now() - ts;
+    if (diff < 60000) return "刚刚在线";
+    const min = Math.floor(diff / 60000);
+    if (min < 60) return min + " 分钟前在线";
+    const hr = Math.floor(min / 60);
+    if (hr < 24) return hr + " 小时前在线";
+    return Math.floor(hr / 24) + " 天前在线";
+}
 async function subscribePresence() {
     if (!cloudMode || !currentRoomId || !loginState.isLogin || !supabase) return;
     if (presenceChannel) return;
@@ -636,12 +647,12 @@ async function subscribePresence() {
         .on("presence", { event: "join" }, ({ newPresences }) => {
             presenceOk = true;
             otherOnline = updateOnlineState();
-            newPresences.forEach(p => { if (p.role && p.role !== loginState.role) showOnlineTip(getRoleName(p.role), true); });
+            newPresences.forEach(p => { if (p.role && p.role !== loginState.role) { otherLastSeen = p.online_at || Date.now(); showOnlineTip(getRoleName(p.role), true); } });
         })
         .on("presence", { event: "leave" }, ({ leftPresences }) => {
             presenceOk = true;
             otherOnline = updateOnlineState();
-            leftPresences.forEach(p => { if (p.role && p.role !== loginState.role) showOnlineTip(getRoleName(p.role), false); });
+            leftPresences.forEach(p => { if (p.role && p.role !== loginState.role) { otherLastSeen = p.online_at || Date.now(); showOnlineTip(getRoleName(p.role), false); } });
         });
     await presenceChannel.subscribe(async (status) => {
         if (status === "SUBSCRIBED") {
@@ -658,12 +669,19 @@ function stopPresence() {
     if (presenceChannel) { try { supabase.removeChannel(presenceChannel); } catch (e) {} presenceChannel = null; }
     presenceOk = false;
     otherOnline = false;
+    otherLastSeen = 0;
     renderOnlineBadge();
 }
 function updateOnlineState() {
     if (!presenceChannel) { otherOnline = false; renderOnlineBadge(); return false; }
     const state = presenceChannel.presenceState();
-    otherOnline = !!(state && state[OTHER_ROLE(loginState.role)] && state[OTHER_ROLE(loginState.role)].length);
+    const otherArr = state && state[OTHER_ROLE(loginState.role)];
+    if (otherArr && otherArr.length) {
+        otherOnline = true;
+        otherLastSeen = otherArr[0].online_at || Date.now();
+    } else {
+        otherOnline = false;
+    }
     renderOnlineBadge();
     return otherOnline;
 }
@@ -676,7 +694,8 @@ function renderOnlineBadge() {
         online = !!otherOnline;
     } else {
         const otherKey = OTHER_ROLE(loginState.role);
-        online = Date.now() - ((data.lastSeen && data.lastSeen[otherKey]) || 0) < 120000;
+        otherLastSeen = (data.lastSeen && data.lastSeen[otherKey]) || 0;
+        online = Date.now() - otherLastSeen < 120000;
         if (online !== otherOnline) {
             otherOnline = online;
             showOnlineTip(name, online);
@@ -684,7 +703,7 @@ function renderOnlineBadge() {
     }
     b.classList.toggle("online", !!online);
     b.classList.toggle("offline", !online);
-    b.innerText = (online ? "🟢 " : "⚪ ") + name + (online ? " 在线" : " 离线");
+    b.innerText = online ? ("🟢 " + name + " 在线") : ("⚪ " + name + " " + timeAgo(otherLastSeen));
 }
 if (!window._hbStarted) {
     window._hbStarted = true;
