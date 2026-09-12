@@ -629,7 +629,7 @@ let lastTipKey = "";
 let presenceOk = false;
 let otherLastSeen = 0;
 function timeAgo(ts) {
-    if (!ts) return "离线";
+    if (!ts) return "还未上线";
     const diff = Date.now() - ts;
     if (diff < 60000) return "刚刚在线";
     const min = Math.floor(diff / 60000);
@@ -714,6 +714,19 @@ if (!window._hbStarted) {
         data.lastSeen[loginState.role] = Date.now();
         save();
     }, 40000);
+}
+if (!window._onlineRefreshStarted) {
+    window._onlineRefreshStarted = true;
+    setInterval(() => {
+        if (!loginState.isLogin || !currentRoomId || !cloudMode) return;
+        if (presenceOk && presenceChannel) {
+            const st = presenceChannel.presenceState();
+            const arr = st && st[OTHER_ROLE(loginState.role)];
+            if (arr && arr.length) { otherOnline = true; otherLastSeen = arr[0].online_at || Date.now(); }
+            else { otherOnline = false; }
+        }
+        renderOnlineBadge();
+    }, 20000);
 }
 function showOnlineTip(name, online) {
     const key = (online ? "on" : "off") + name;
