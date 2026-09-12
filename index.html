@@ -874,7 +874,7 @@ async function approvePendingTask(idx) {
     const t = data.pendingTasks[idx]; if (!t) return;
     if (t.status === "approved" || t.status === "rejected") { alert("该申请已处理过了"); return; }
     const pt = Math.round(Number(document.getElementById("approvePoint_" + idx).value));
-    if (isNaN(pt) || pt <= 0) { alert("请先设置任务积分（大于0的整数）"); return; }
+    if (isNaN(pt) || pt < 0) { alert("请先设置任务积分（不能为负数）"); return; }
     t.basePoint = pt;
     data.msgList.push({ text: t.text, basePoint: t.basePoint, note: t.note, expireTime: null, priority: t.priority || "norm", top: false, requester: "user" });
     t.status = "approved";
@@ -936,7 +936,7 @@ function renderAdminPendingList() {
         div.innerHTML = '<div class="msg-title">📮 ' + t.text + '</div><div>申请人：' + getRoleName("user") + '</div>' +
             (t.note ? '<div class="item-note" style="color:#9a8a92;">🔒 私密随笔仅申请人可见</div>' : "") +
             '<div style="color:#94848c;font-size:12px;">申请时间：' + t.time + '</div>' +
-            '<div class="row"><input type="number" id="approvePoint_' + idx + '" class="grow" placeholder="设置任务积分" min="1" value="' + (t.basePoint || "") + '"><button class="btn-green" onclick="approvePendingTask(' + idx + ')">✅ 同意发布</button></div>' +
+            '<div class="row"><input type="number" id="approvePoint_' + idx + '" class="grow" placeholder="设置任务积分" min="0" value="' + (t.basePoint || "") + '"><button class="btn-green" onclick="approvePendingTask(' + idx + ')">✅ 同意发布</button></div>' +
             '<div class="row"><button class="btn-red" style="flex:1 1 0;" onclick="toggleRejectBox(' + idx + ')">❌ 拒绝（可选理由）</button></div>' +
             '<div id="rejectBox_' + idx + '" class="hide"><div class="row"><input type="text" id="rejectReason_' + idx + '" class="grow" placeholder="拒绝理由（可留空）"><button class="btn-red" onclick="rejectPendingTask(' + idx + ')">确认拒绝</button></div></div>';
         w.appendChild(div);
