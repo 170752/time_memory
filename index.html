@@ -226,6 +226,16 @@ button:disabled{background:#bbb !important;box-shadow:none;cursor:not-allowed;op
 <div class="row"><input type="text" id="shopGoodsName" class="grow" placeholder="商品名称"><input type="number" id="shopGoodsPoint" style="flex:0 0 120px;" placeholder="所需积分"></div>
 <div class="btn-row"><button class="btn-purple" onclick="addShopGoods()">➕ 添加商品</button></div>
 </div>
+<div id="shopApplyPendingWrap" class="hide"></div>
+<div id="shopApplyFormArea" class="hide">
+<h4 style="margin-top:12px;">🛒 申请上架商品</h4>
+<div class="field"><input type="text" id="shopApplyName" class="grow" placeholder="想兑换的物品名称"></div>
+<div class="field"><input type="text" id="shopApplyDesc" class="grow" placeholder="物品说明（可选）"></div>
+<div class="btn-row"><button class="btn-purple" onclick="submitShopApply()">🛒 提交上架申请</button></div>
+<p class="field-hint">只申请想兑换的物品；上架积分由A伙伴设置，拒绝时会告知理由。</p>
+<h4 style="margin-top:12px;">📭 我的上架申请</h4>
+<div id="myShopApplyList"></div>
+</div>
 <h4>📦 可兑换商品列表</h4>
 <div id="shopListWrap"></div>
 <h4 style="margin-top:12px;">📜 兑换历史</h4>
@@ -409,6 +419,7 @@ function ensureDataFields(d) {
     if (!d) d = {};
     if (!d.moodList) d.moodList = [];
     if (!d.shopGoods) d.shopGoods = [];
+    if (!d.shopApplies) d.shopApplies = [];
     if (!d.shopRecords) d.shopRecords = [];
     if (!d.messages) d.messages = [];
     if (!d.pointHistory) d.pointHistory = [];
@@ -1075,6 +1086,87 @@ function renderMoodList() {
         w.appendChild(more);
     }
 }
+async function submitShopApply() {
+    const n = document.getElementById("shopApplyName").value.trim();
+    const dsc = document.getElementById("shopApplyDesc").value.trim();
+    if (!n) { alert("请填写想兑换的物品名称"); return; }
+    data.shopApplies.unshift({ text: n, desc: dsc, requester: "user", status: "pending", time: new Date().toLocaleString() });
+    await save(); render();
+    document.getElementById("shopApplyName").value = "";
+    document.getElementById("shopApplyDesc").value = "";
+    alert("✅ 已提交上架申请，等待" + getRoleShort("admin") + "审批");
+}
+async function approveShopApply(idx) {
+    const a = data.shopApplies[idx]; if (!a) return;
+    if (a.status !== "pending") { alert("该申请已处理过了"); return; }
+    const p = Math.round(Number(document.getElementById("approveShopPrice_" + idx).value));
+    if (isNaN(p) || p < 0) { alert("请先设置商品积分（不能为负数）"); return; }
+    a.price = p;
+    a.status = "approved";
+    a.handledTime = new Date().toLocaleString();
+    data.shopGoods.push({ name: a.text, cost: p, note: a.desc });
+    await save(); render();
+    alert("✅ 已同意上架「" + a.text + "」，所需积分：" + p);
+}
+function toggleRejectShopBox(idx) { toggleHide("rejectShopBox_" + idx); }
+async function rejectShopApply(idx) {
+    const a = data.shopApplies[idx]; if (!a) return;
+    if (a.status !== "pending") { alert("该申请已处理过了"); return; }
+    const inp = document.getElementById("rejectShopReason_" + idx);
+    a.rejectReason = inp ? inp.value.trim() : "";
+    a.status = "rejected";
+    a.handledTime = new Date().toLocaleString();
+    await save(); render();
+    alert(a.rejectReason ? "已驳回，理由已告知申请人" : "已驳回该上架申请");
+}
+let shopApplyShowCount = 20;
+function loadMoreShopApply() { shopApplyShowCount += 20; renderShopApply(); }
+function renderShopApply() {
+    const pw = document.getElementById("shopApplyPendingWrap");
+    if (pw) {
+        pw.innerHTML = "";
+        const pendingList = (data.shopApplies || []).filter(x => x.status === "pending");
+        if (pendingList.length === 0) {
+            pw.innerHTML = '<h4 style="margin-top:12px;">📨 商品上架申请</h4><div style="padding:8px 4px;color:#84747c;font-size:13px;">暂无待审批的上架申请</div>';
+        } else {
+            let html = '<h4 style="margin-top:12px;">📨 商品上架申请（' + pendingList.length + '）</h4>';
+            pendingList.forEach(a => {
+                const idx = data.shopApplies.indexOf(a);
+                html += '<div class="item-card"><div class="msg-title">🛒 ' + a.text + '</div>' +
+                    (a.desc ? '<div class="item-note">📝 ' + a.desc + '</div>' : "") +
+                    '<div>申请人：' + getRoleName("user") + '</div>' +
+                    '<div style="color:#94848c;font-size:12px;">申请时间：' + a.time + '</div>' +
+                    '<div class="row"><input type="number" id="approveShopPrice_' + idx + '" class="grow" placeholder="设置商品积分" min="0"><button class="btn-green" onclick="approveShopApply(' + idx + ')">✅ 同意上架</button></div>' +
+                    '<div class="row"><button class="btn-red" style="flex:1 1 0;" onclick="toggleRejectShopBox(' + idx + ')">❌ 驳回（可选理由）</button></div>' +
+                    '<div id="rejectShopBox_' + idx + '" class="hide"><div class="row"><input type="text" id="rejectShopReason_' + idx + '" class="grow" placeholder="驳回理由（可留空）"><button class="btn-red" onclick="rejectShopApply(' + idx + ')">确认驳回</button></div></div></div>';
+            });
+            pw.innerHTML = html;
+        }
+    }
+    const mw = document.getElementById("myShopApplyList");
+    if (mw) {
+        mw.innerHTML = "";
+        const mine = (data.shopApplies || []).filter(x => x.requester === loginState.role);
+        if (mine.length === 0) {
+            mw.innerHTML = '<div style="padding:8px 4px;color:#84747c;font-size:13px;">暂无上架申请记录</div>';
+        } else {
+            mine.slice(0, shopApplyShowCount).forEach(a => {
+                const st = a.status === "approved" ? '<span style="color:#2f9e6e;">✅ 已上架（' + a.price + '分）</span>' :
+                    a.status === "rejected" ? '<span style="color:#d06060;">❌ 已驳回' + (a.rejectReason ? "：" + a.rejectReason : "") + '</span>' :
+                    '<span style="color:#e8a33d;">⏳ 审批中</span>';
+                const div = document.createElement("div"); div.className = "item-card";
+                div.innerHTML = '<div class="msg-title">🛒 ' + a.text + '</div>' + st +
+                    '<div style="color:#94848c;font-size:12px;">申请时间：' + a.time + (a.handledTime ? "　处理时间：" + a.handledTime : "") + '</div>';
+                mw.appendChild(div);
+            });
+            if (mine.length > shopApplyShowCount) {
+                const more = document.createElement("div"); more.style.textAlign = "center";
+                more.innerHTML = '<button class="btn-blue btn-sm" onclick="loadMoreShopApply()">📜 查看更早申请（' + (mine.length - shopApplyShowCount) + ' 条）</button>';
+                mw.appendChild(more);
+            }
+        }
+    }
+}
 async function addShopGoods() {
     const n = document.getElementById("shopGoodsName").value.trim();
     const p = Number(document.getElementById("shopGoodsPoint").value);
@@ -1560,6 +1652,11 @@ function render() {
     if (loginState.role === "user") { applyArea.classList.remove("hide"); renderMyPendingList(); }
     else { applyArea.classList.add("hide"); }
     renderAdminPendingList();
+    const shopPendingWrap = document.getElementById("shopApplyPendingWrap");
+    const shopFormArea = document.getElementById("shopApplyFormArea");
+    if (loginState.role === "admin") { shopPendingWrap.classList.remove("hide"); shopFormArea.classList.add("hide"); }
+    else { shopPendingWrap.classList.add("hide"); shopFormArea.classList.remove("hide"); }
+    renderShopApply();
     const box = document.getElementById("msgList"); box.innerHTML = "";
     const sortedTasks = [...data.msgList].sort((a, b) => {
         if (!!a.top && !b.top) return -1;
