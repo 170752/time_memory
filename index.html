@@ -1553,7 +1553,6 @@ async function sendTaskMsg() {
     document.getElementById("taskExpireTime").value = "";
     document.getElementById("taskTopCheck").checked = false;
 }
-async function removeTask(idx, tip) { data.msgList.splice(idx, 1); await save(); render(); alert("✅ 该约定已经" + tip); }
 async function submitTaskFinish(taskIdx) {
     if (isReadOnlyMode()) { alert("⚠️ 当前积分过低，仅查看模式，不能标记任务完成"); return; }
     const task = data.msgList[taskIdx]; if (!task) return;
@@ -1805,7 +1804,7 @@ function render() {
             }
         }
         if (loginState.role === "admin") {
-            html += '<div class="row"><button class="btn-blue" onclick="removeTask(' + realIndex + ',\'撤回\')">撤回约定</button><button class="btn-red" onclick="removeTask(' + realIndex + ',\'删除\')">删除约定</button></div>';
+            html += '<div style="color:#5ab482;font-size:13px;margin-top:4px;">⏳ 待' + getRoleShort("user") + "兑现中…</div>";
         }
         div.innerHTML = html; box.appendChild(div);
     });
