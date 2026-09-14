@@ -223,7 +223,7 @@ button:disabled{background:#bbb !important;box-shadow:none;cursor:not-allowed;op
 <h3>🎁 积分商城 - 待兑换小事清单</h3>
 <div id="shopAdminArea" class="hide">
 <h4 id="shopTitleLabel">🔧 A伙伴新增商城商品</h4>
-<div class="row"><input type="text" id="shopGoodsName" class="grow" placeholder="商品名称"><input type="number" id="shopGoodsPoint" style="flex:0 0 120px;" placeholder="所需积分"></div>
+<div class="row"><input type="text" id="shopGoodsName" class="grow" placeholder="商品名称"><input type="number" id="shopGoodsPoint" style="flex:0 0 90px;" placeholder="积分"><input type="number" id="shopGoodsQty" style="flex:0 0 70px;" placeholder="数量"></div>
 <div class="btn-row"><button class="btn-purple" onclick="addShopGoods()">➕ 添加商品</button></div>
 </div>
 <div id="shopApplyPendingWrap" class="hide"></div>
@@ -420,6 +420,7 @@ function ensureDataFields(d) {
     if (!d.moodList) d.moodList = [];
     if (!d.shopGoods) d.shopGoods = [];
     if (!d.shopApplies) d.shopApplies = [];
+    if (Array.isArray(d.shopGoods)) d.shopGoods.forEach(g => { if (g.qty === undefined) g.qty = 1; });
     if (!d.shopRecords) d.shopRecords = [];
     if (!d.messages) d.messages = [];
     if (!d.pointHistory) d.pointHistory = [];
@@ -1101,12 +1102,14 @@ async function approveShopApply(idx) {
     if (a.status !== "pending") { alert("该申请已处理过了"); return; }
     const p = Math.round(Number(document.getElementById("approveShopPrice_" + idx).value));
     if (isNaN(p) || p < 0) { alert("请先设置商品积分（不能为负数）"); return; }
+    const q = Math.round(Number(document.getElementById("approveShopQty_" + idx).value));
+    const qty = (isNaN(q) || q < 1) ? 1 : q;
     a.price = p;
     a.status = "approved";
     a.handledTime = new Date().toLocaleString();
-    data.shopGoods.push({ name: a.text, cost: p, note: a.desc });
+    data.shopGoods.push({ name: a.text, cost: p, qty: qty, note: a.desc });
     await save(); render();
-    alert("✅ 已同意上架「" + a.text + "」，所需积分：" + p);
+    alert("✅ 已同意上架「" + a.text + "」，所需积分：" + p + "，数量：" + qty);
 }
 function toggleRejectShopBox(idx) { toggleHide("rejectShopBox_" + idx); }
 async function rejectShopApply(idx) {
@@ -1136,7 +1139,7 @@ function renderShopApply() {
                     (a.desc ? '<div class="item-note">📝 ' + a.desc + '</div>' : "") +
                     '<div>申请人：' + getRoleName("user") + '</div>' +
                     '<div style="color:#94848c;font-size:12px;">申请时间：' + a.time + '</div>' +
-                    '<div class="row"><input type="number" id="approveShopPrice_' + idx + '" class="grow" placeholder="设置商品积分" min="0"><button class="btn-green" onclick="approveShopApply(' + idx + ')">✅ 同意上架</button></div>' +
+                    '<div class="row"><input type="number" id="approveShopPrice_' + idx + '" class="grow" placeholder="设置商品积分" min="0"><input type="number" id="approveShopQty_' + idx + '" style="flex:0 0 80px;" placeholder="数量" min="1"><button class="btn-green" onclick="approveShopApply(' + idx + ')">✅ 同意上架</button></div>' +
                     '<div class="row"><button class="btn-red" style="flex:1 1 0;" onclick="toggleRejectShopBox(' + idx + ')">❌ 驳回（可选理由）</button></div>' +
                     '<div id="rejectShopBox_' + idx + '" class="hide"><div class="row"><input type="text" id="rejectShopReason_' + idx + '" class="grow" placeholder="驳回理由（可留空）"><button class="btn-red" onclick="rejectShopApply(' + idx + ')">确认驳回</button></div></div></div>';
             });
@@ -1170,21 +1173,34 @@ function renderShopApply() {
 async function addShopGoods() {
     const n = document.getElementById("shopGoodsName").value.trim();
     const p = Number(document.getElementById("shopGoodsPoint").value);
+    const q = Math.round(Number(document.getElementById("shopGoodsQty").value));
     if (!n || isNaN(p) || p <= 0) { alert("请填写商品名称与有效的积分"); return; }
-    data.shopGoods.push({ name: n, cost: p }); data.shopAddCount = (data.shopAddCount || 0) + 1; await save(); render();
-    document.getElementById("shopGoodsName").value = ""; document.getElementById("shopGoodsPoint").value = "";
+    const qty = (isNaN(q) || q < 1) ? 1 : q;
+    data.shopGoods.push({ name: n, cost: p, qty: qty }); data.shopAddCount = (data.shopAddCount || 0) + 1; await save(); render();
+    document.getElementById("shopGoodsName").value = ""; document.getElementById("shopGoodsPoint").value = ""; document.getElementById("shopGoodsQty").value = "";
 }
 async function exchangeGoods(idx) {
     if (isReadOnlyMode()) { alert("⚠️ 当前积分过低，仅查看模式，不能兑换商品"); return; }
     const g = data.shopGoods[idx]; if (!g) return;
-    const diff = Math.abs(data.point - g.cost);
-    if (diff > MAX_EXCHANGE_DIFF) { alert("❌ 不可兑换！当前积分" + data.point + "，商品需要" + g.cost + "积分。差值" + diff + "，最大允许差值" + MAX_EXCHANGE_DIFF); return; }
-    data.point -= g.cost;
-    data.shopRecords.unshift({ goodsName: g.name, cost: g.cost, time: new Date().toLocaleString() });
-    pushPointHistory("兑换商品" + g.name + "-" + g.cost);
-    data.shopGoods.splice(idx, 1);
+    const qty = g.qty === undefined ? 1 : (g.qty || 0);
+    let n = 1;
+    if (qty > 1) {
+        const inp = prompt("【" + g.name + "】剩余 " + qty + " 件，单价 " + g.cost + " 积分\n请输入兑换数量（1~" + qty + "）：", "1");
+        if (inp === null) return;
+        n = Math.round(Number(inp));
+        if (isNaN(n) || n < 1 || n > qty) { alert("数量无效，请输入 1~" + qty + " 之间的整数"); return; }
+    }
+    const total = g.cost * n;
+    const diff = Math.abs(data.point - total);
+    if (diff > MAX_EXCHANGE_DIFF) { alert("❌ 不可兑换！当前积分" + data.point + "，需" + total + "积分。差值" + diff + "，最大允许差值" + MAX_EXCHANGE_DIFF); return; }
+    data.point -= total;
+    data.shopRecords.unshift({ goodsName: g.name, cost: total, qty: n, time: new Date().toLocaleString() });
+    pushPointHistory("兑换商品" + g.name + "×" + n + "-" + total);
+    g.qty = qty - n;
+    const removed = g.qty <= 0;
+    if (removed) data.shopGoods.splice(idx, 1);
     clampPoint(); await save(); render();
-    alert("✅ 兑换【" + g.name + "】成功，消耗" + g.cost + "积分，当前积分：" + data.point + "\n该商品已兑换完，自动从商城下架");
+    alert("✅ 兑换【" + g.name + "】×" + n + " 成功，消耗" + total + "积分，当前积分：" + data.point + (removed ? "，该商品已兑换完，自动从商城下架" : "，剩余 " + g.qty + " 件"));
 }
 async function delShopGoods(idx) { data.shopGoods.splice(idx, 1); await save(); render(); }
 function renderShop() {
@@ -1201,12 +1217,14 @@ function renderShop() {
             const diffVal = Math.abs(data.point - g.cost);
             const canExchange = (diffVal <= MAX_EXCHANGE_DIFF) && (!isReadOnlyMode());
             const diffTip = '<span style="font-size:12px;color:#777">｜积分差值：' + diffVal + '（允许≤' + MAX_EXCHANGE_DIFF + '）</span>';
+            const qty = g.qty === undefined ? 1 : (g.qty || 0);
+            const qtyTip = '<span style="font-size:12px;color:#e8a33d;">｜剩余 ' + qty + ' 件</span>';
             let btnHtml = "";
             if (loginState.role === "user") {
                 btnHtml = canExchange ? '<button class="btn-green" onclick="exchangeGoods(' + idx + ')">兑换</button>' : '<button class="btn-green" disabled>不可兑换</button>';
             }
             if (loginState.role === "admin") { btnHtml = '<button class="btn-red" onclick="delShopGoods(' + idx + ')">删除</button>'; }
-            div.innerHTML = '<div class="shop-info">🎁' + g.name + "｜消耗积分：" + g.cost + diffTip + "</div><div class=\"row\">" + btnHtml + "</div>";
+            div.innerHTML = '<div class="shop-info">🎁' + g.name + "｜消耗积分：" + g.cost + diffTip + qtyTip + "</div><div class=\"row\">" + btnHtml + "</div>";
             shopWrap.appendChild(div);
         });
     }
@@ -1215,7 +1233,7 @@ function renderShop() {
     } else {
         data.shopRecords.forEach(r => {
             const div = document.createElement("div"); div.style.fontSize = "13px"; div.style.margin = "4px 0";
-            div.innerText = r.time + "｜兑换：" + r.goodsName + "，消耗" + r.cost + "积分";
+            div.innerText = r.time + "｜兑换：" + r.goodsName + (r.qty && r.qty > 1 ? "×" + r.qty : "") + "，消耗" + r.cost + "积分";
             recWrap.appendChild(div);
         });
     }
