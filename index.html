@@ -365,7 +365,7 @@ button:disabled{background:#bbb !important;box-shadow:none;cursor:not-allowed;op
 <div class="level-modal-box" style="width:min(400px,92%);">
 <div class="level-up-title" id="loginSummaryTitle">📋 今日备忘</div>
 <div id="loginSummaryBody" style="text-align:left;margin:10px 0;max-height:60vh;overflow-y:auto;font-size:14px;line-height:1.9;color:#5c4b55;"></div>
-<button class="btn-purple" onclick="closeLoginSummary()">✅ 知道啦</button>
+<button class="btn-purple" onclick="closeGreetingAndCheck()">✅ 知道啦</button>
 </div>
 </div>
 
@@ -1425,15 +1425,27 @@ function showGreetingSummary() {
     document.getElementById("loginSummaryBody").innerHTML = '<div style="font-size:17px;line-height:2.1;text-align:center;padding:10px 4px;color:#5c4b55;">' + g.line + '</div><div style="text-align:center;color:#a86b94;font-size:13px;margin-top:2px;">今天也要开开心心哦~</div>';
     document.getElementById("loginSummaryModal").classList.remove("hide");
 }
-function showLoginSummary() {
+function hasTodoItems() {
     const undone = data.msgList || [];
     const taskPending = (data.pendingTasks || []).filter(x => x.status === "pending");
     const shopPending = (data.shopApplies || []).filter(x => x.status === "pending");
     const confirmPending = data.waitConfirmTasks || [];
     const myPending = (data.pendingTasks || []).filter(x => x.requester === loginState.role && x.status === "pending").length;
     const myShop = (data.shopApplies || []).filter(x => x.requester === loginState.role && x.status === "pending").length;
-    const hasTodo = undone.length > 0 || taskPending.length > 0 || shopPending.length > 0 || (loginState.role === "admin" ? confirmPending.length > 0 : (myPending + myShop) > 0);
-    if (!hasTodo) { showGreetingSummary(); return; }
+    return undone.length > 0 || taskPending.length > 0 || shopPending.length > 0 || (loginState.role === "admin" ? confirmPending.length > 0 : (myPending + myShop) > 0);
+}
+function showLoginSummary() { showGreetingSummary(); }
+function closeGreetingAndCheck() {
+    closeLoginSummary();
+    if (hasTodoItems()) showTodoSummary();
+}
+function showTodoSummary() {
+    const undone = data.msgList || [];
+    const taskPending = (data.pendingTasks || []).filter(x => x.status === "pending");
+    const shopPending = (data.shopApplies || []).filter(x => x.status === "pending");
+    const confirmPending = data.waitConfirmTasks || [];
+    const myPending = (data.pendingTasks || []).filter(x => x.requester === loginState.role && x.status === "pending").length;
+    const myShop = (data.shopApplies || []).filter(x => x.requester === loginState.role && x.status === "pending").length;
     document.getElementById("loginSummaryTitle").innerText = "📋 今日备忘";
     let html = "";
     if (undone.length === 0) {
