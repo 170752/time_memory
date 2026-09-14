@@ -1432,7 +1432,9 @@ function hasTodoItems() {
     const confirmPending = data.waitConfirmTasks || [];
     const myPending = (data.pendingTasks || []).filter(x => x.requester === loginState.role && x.status === "pending").length;
     const myShop = (data.shopApplies || []).filter(x => x.requester === loginState.role && x.status === "pending").length;
-    return undone.length > 0 || taskPending.length > 0 || shopPending.length > 0 || (loginState.role === "admin" ? confirmPending.length > 0 : (myPending + myShop) > 0);
+    return loginState.role === "admin"
+        ? (confirmPending.length > 0 || taskPending.length > 0 || shopPending.length > 0)
+        : (undone.length > 0 || (myPending + myShop) > 0);
 }
 function showLoginSummary() { showGreetingSummary(); }
 function closeGreetingAndCheck() {
@@ -1448,14 +1450,16 @@ function showTodoSummary() {
     const myShop = (data.shopApplies || []).filter(x => x.requester === loginState.role && x.status === "pending").length;
     document.getElementById("loginSummaryTitle").innerText = "📋 今日备忘";
     let html = "";
-    if (undone.length === 0) {
-        html += '<div>📋 未完成任务：<b>无</b> 🎉</div>';
-    } else {
-        html += '<div>📋 未完成任务（<b>' + undone.length + '</b>）：<span style="cursor:pointer;color:#a86b94;font-size:13px;" onclick="gotoSection(\'msgList\')">→ 前往</span></div>';
-        undone.slice(0, 5).forEach(m => {
-            html += '<div style="padding:2px 0 2px 12px;border-left:3px solid #e8c8dd;margin:4px 0;">• ' + m.text + '</div>';
-        });
-        if (undone.length > 5) html += '<div style="color:#94848c;font-size:12px;">… 等共 ' + undone.length + ' 条</div>';
+    if (loginState.role === "user") {
+        if (undone.length === 0) {
+            html += '<div>📋 未完成任务：<b>无</b> 🎉</div>';
+        } else {
+            html += '<div>📋 未完成任务（<b>' + undone.length + '</b>）：<span style="cursor:pointer;color:#a86b94;font-size:13px;" onclick="gotoSection(\'msgList\')">→ 前往</span></div>';
+            undone.slice(0, 5).forEach(m => {
+                html += '<div style="padding:2px 0 2px 12px;border-left:3px solid #e8c8dd;margin:4px 0;">• ' + m.text + '</div>';
+            });
+            if (undone.length > 5) html += '<div style="color:#94848c;font-size:12px;">… 等共 ' + undone.length + ' 条</div>';
+        }
     }
     if (loginState.role === "admin") {
         html += '<div style="margin-top:10px;">⏳ 待确认完成约定：<b>' + confirmPending.length + '</b>' + (confirmPending.length > 0 ? ' <span style="cursor:pointer;color:#a86b94;font-size:13px;" onclick="gotoSection(\'adminConfirmTaskList\')">→ 前往</span>' : '') + '</div>';
