@@ -363,7 +363,7 @@ button:disabled{background:#bbb !important;box-shadow:none;cursor:not-allowed;op
 <!-- 登录备忘弹窗 -->
 <div id="loginSummaryModal" class="level-modal hide">
 <div class="level-modal-box" style="width:min(400px,92%);">
-<div class="level-up-title">📋 今日备忘</div>
+<div class="level-up-title" id="loginSummaryTitle">📋 今日备忘</div>
 <div id="loginSummaryBody" style="text-align:left;margin:10px 0;max-height:60vh;overflow-y:auto;font-size:14px;line-height:1.9;color:#5c4b55;"></div>
 <button class="btn-purple" onclick="closeLoginSummary()">✅ 知道啦</button>
 </div>
@@ -1390,10 +1390,51 @@ async function ackSecretPopup() {
     document.getElementById("secretPopup").classList.add("hide");
     await save(); render();
 }
+const GREET_MORNING = [
+"新的一天，从想你开始。", "早安，今天也要元气满满哦。", "醒来第一件事就是想到你，真好。", "阳光和你都在，就是最好的早晨。", "早安呀，记得吃早餐哦。", "愿你今天遇到的都是温柔。", "早起的鸟儿有虫吃，早起的人儿有我惦记。", "今天的风很温柔，就像你一样。", "早安，我的小太阳。", "新的一天，把开心装满口袋。", "醒来看到天气很好，就想到了你。", "早安，今天也要记得想我哦。", "一日之计在于晨，一晨之计在于你。", "早安，希望今天你一切都顺利。", "梦里都是你，醒来还是你。", "早安，今天也要元气满满地生活呀。", "清晨的第一缕阳光，替我说声喜欢你。"
+];
+const GREET_FORENOON = [
+"上午好，忙里也要记得喝水哦。", "想你的时间，过得特别快。", "今天也要加油鸭！", "工作再忙，也要记得我在这里等你。", "上午的咖啡，加了一点想念。", "愿你上午遇到的都是好心情。", "认真工作的你，闪闪发光。", "上午好呀，今天状态怎么样？", "偷偷告诉你，我刚刚在想你。", "再坚持一下，中午就可以休息啦。", "阳光正好，微风不燥，有你更好。", "上午好，记得给眼睛放个假。", "今天的云很好看，想拍给你看。", "忙归忙，记得想我。", "上午的时光，用来想念你刚刚好。", "加油，我在心里给你打气！", "上午好，愿你事事顺心。"
+];
+const GREET_NOON = [
+"中午好，记得好好吃饭哦。", "午饭时间到，干饭人干饭魂！", "中午啦，放下手头的事休息一下吧。", "吃饭了吗？要按时吃饭呀。", "中午好，今天午饭吃了什么呀？", "午休时间，偷偷想你一下。", "吃饱饱，下午才有力气想我。", "中午的阳光暖暖的，像你的怀抱。", "干饭不积极，思想有问题，快去吃饭！", "中午好，别忘了午休一会儿。", "今天的饭菜，有我的想念加成。", "中午啦，给自己一点喘息的时间。", "午安，愿你有个甜甜的午觉。", "吃饱喝足，下午继续加油。", "中午好，你吃饭的样子一定很可爱。", "记得吃饭，这是我对你的重要嘱咐。", "中午啦，摸摸头，辛苦了。"
+];
+const GREET_AFTERNOON = [
+"下午好，来杯下午茶续续命吧。", "下午的时光，适合想你。", "加油鸭，下午也要元气满满。", "下午好，今天过得怎么样？", "忙完了吗？记得伸个懒腰。", "下午的阳光有点温柔，像你。", "距离见面又近了一步。", "下午好，偷偷告诉你，我想你了。", "疲惫的时候，想想我呀。", "下午茶时间到，给自己放个假。", "坚持住，胜利就在前方。", "下午好，愿你被世界温柔以待。", "今天的云朵好可爱，让我想到你。", "下午好，记得多喝水哦。", "快忙完了吧，我在等你。", "下午的每一分钟，都在靠近你。", "下午好，今天也要开开心心。"
+];
+const GREET_EVENING = [
+"晚上好，今天辛苦啦。", "天黑请闭眼，让我先说想你。", "晚上好，晚饭吃了吗？", "下班啦，好好放松一下吧。", "晚风很温柔，就像你在我身边。", "晚上好，今天的月亮很美，想分享给你。", "累了一天，抱抱你。", "晚上好，别忘了你还有我呀。", "星星都出来了，你在我心里最亮。", "晚上好，今天有什么开心的事吗？", "夜色温柔，我也温柔。", "晚上好，记得早点休息。", "灯亮了，是想你的信号。", "晚上好呀，今天也想你了。", "洗漱完，给你一个晚安吻。", "晚上好，希望今晚能梦到你。", "夜晚的风，替我抱抱你。"
+];
+const GREET_NIGHT = [
+"夜深了，早点睡哦。", "熬夜冠军，要关灯睡觉啦。", "夜深人静，想念加倍。", "晚安，梦里见。", "夜深了，别玩手机了，快睡吧。", "月亮睡了，星星睡了，我也该睡了，晚安。", "深夜的想念，都藏在月亮里。", "睡个好觉，明天见。", "夜深了，给你盖好被子。", "晚安，愿你好梦。", "凌晨的世界很安静，只有我在想你。", "快睡吧，梦里我等你。", "夜深了，把烦恼都交给明天。", "晚安，做个甜甜的梦。", "夜深了，想你的第 N 次。", "闭上眼睛，我在你身边。", "晚安，明天也要好好在一起。"
+];
+function getGreeting() {
+    const h = new Date().getHours();
+    let greet, arr;
+    if (h >= 5 && h < 9) { greet = "🌅 早上好"; arr = GREET_MORNING; }
+    else if (h >= 9 && h < 11) { greet = "☀️ 上午好"; arr = GREET_FORENOON; }
+    else if (h >= 11 && h < 13) { greet = "🍚 中午好"; arr = GREET_NOON; }
+    else if (h >= 13 && h < 18) { greet = "🍵 下午好"; arr = GREET_AFTERNOON; }
+    else if (h >= 18 && h < 23) { greet = "🌙 晚上好"; arr = GREET_EVENING; }
+    else { greet = "🌌 夜深了"; arr = GREET_NIGHT; }
+    return { greet: greet, line: arr[Math.floor(Math.random() * arr.length)] };
+}
+function showGreetingSummary() {
+    const g = getGreeting();
+    document.getElementById("loginSummaryTitle").innerText = g.greet;
+    document.getElementById("loginSummaryBody").innerHTML = '<div style="font-size:17px;line-height:2.1;text-align:center;padding:10px 4px;color:#5c4b55;">' + g.line + '</div><div style="text-align:center;color:#a86b94;font-size:13px;margin-top:2px;">今天也要好好在一起呀 💞</div>';
+    document.getElementById("loginSummaryModal").classList.remove("hide");
+}
 function showLoginSummary() {
     const undone = data.msgList || [];
     const taskPending = (data.pendingTasks || []).filter(x => x.status === "pending");
     const shopPending = (data.shopApplies || []).filter(x => x.status === "pending");
+    const confirmPending = data.waitConfirmTasks || [];
+    const myPending = (data.pendingTasks || []).filter(x => x.requester === loginState.role && x.status === "pending").length;
+    const myShop = (data.shopApplies || []).filter(x => x.requester === loginState.role && x.status === "pending").length;
+    const hasTodo = undone.length > 0 || taskPending.length > 0 || shopPending.length > 0 || (loginState.role === "admin" ? confirmPending.length > 0 : (myPending + myShop) > 0);
+    if (!hasTodo) { showGreetingSummary(); return; }
+    document.getElementById("loginSummaryTitle").innerText = "📋 今日备忘";
     let html = "";
     if (undone.length === 0) {
         html += '<div>📋 未完成任务：<b>无</b> 🎉</div>';
@@ -1405,7 +1446,6 @@ function showLoginSummary() {
         if (undone.length > 5) html += '<div style="color:#94848c;font-size:12px;">… 等共 ' + undone.length + ' 条</div>';
     }
     if (loginState.role === "admin") {
-        const confirmPending = data.waitConfirmTasks || [];
         html += '<div style="margin-top:10px;">⏳ 待确认完成约定：<b>' + confirmPending.length + '</b>' + (confirmPending.length > 0 ? ' <span style="cursor:pointer;color:#a86b94;font-size:13px;" onclick="gotoSection(\'adminConfirmTaskList\')">→ 前往</span>' : '') + '</div>';
         if (confirmPending.length > 0) {
             confirmPending.slice(0, 3).forEach(t => {
@@ -1417,8 +1457,6 @@ function showLoginSummary() {
         html += '<div style="margin-top:4px;">🛒 待审核上架申请：<b>' + shopPending.length + '</b>' + (shopPending.length > 0 ? ' <span style="cursor:pointer;color:#a86b94;font-size:13px;" onclick="gotoSection(\'shopApplyPendingWrap\')">→ 前往</span>' : '') + '</div>';
         if (taskPending.length === 0 && shopPending.length === 0) html += '<div style="color:#94848c;font-size:12px;margin-top:2px;">没有待审核的申请 ✅</div>';
     } else {
-        const myPending = (data.pendingTasks || []).filter(x => x.requester === loginState.role && x.status === "pending").length;
-        const myShop = (data.shopApplies || []).filter(x => x.requester === loginState.role && x.status === "pending").length;
         html += '<div style="margin-top:10px;">⏳ 我的申请审批中：任务 <b>' + myPending + '</b> 条，上架 <b>' + myShop + '</b> 条' + ((myPending + myShop) > 0 ? ' <span style="cursor:pointer;color:#a86b94;font-size:13px;" onclick="gotoSection(\'userTaskApplyArea\')">→ 前往</span>' : '') + '</div>';
     }
     document.getElementById("loginSummaryBody").innerHTML = html;
