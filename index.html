@@ -1434,7 +1434,7 @@ function hasTodoItems() {
     const myShop = (data.shopApplies || []).filter(x => x.requester === loginState.role && x.status === "pending").length;
     return loginState.role === "admin"
         ? (confirmPending.length > 0 || taskPending.length > 0 || shopPending.length > 0)
-        : (undone.length > 0 || (myPending + myShop) > 0);
+        : (undone.length > 0);
 }
 function showLoginSummary() { showGreetingSummary(); }
 function closeGreetingAndCheck() {
@@ -1446,8 +1446,6 @@ function showTodoSummary() {
     const taskPending = (data.pendingTasks || []).filter(x => x.status === "pending");
     const shopPending = (data.shopApplies || []).filter(x => x.status === "pending");
     const confirmPending = data.waitConfirmTasks || [];
-    const myPending = (data.pendingTasks || []).filter(x => x.requester === loginState.role && x.status === "pending").length;
-    const myShop = (data.shopApplies || []).filter(x => x.requester === loginState.role && x.status === "pending").length;
     document.getElementById("loginSummaryTitle").innerText = "📋 今日备忘";
     let html = "";
     if (loginState.role === "user") {
@@ -1472,8 +1470,6 @@ function showTodoSummary() {
         html += '<div style="margin-top:10px;">📨 待审核任务申请：<b>' + taskPending.length + '</b>' + (taskPending.length > 0 ? ' <span style="cursor:pointer;color:#a86b94;font-size:13px;" onclick="gotoSection(\'adminPendingList\')">→ 前往</span>' : '') + '</div>';
         html += '<div style="margin-top:4px;">🛒 待审核上架申请：<b>' + shopPending.length + '</b>' + (shopPending.length > 0 ? ' <span style="cursor:pointer;color:#a86b94;font-size:13px;" onclick="gotoSection(\'shopApplyPendingWrap\')">→ 前往</span>' : '') + '</div>';
         if (taskPending.length === 0 && shopPending.length === 0) html += '<div style="color:#94848c;font-size:12px;margin-top:2px;">没有待审核的申请 ✅</div>';
-    } else {
-        html += '<div style="margin-top:10px;">⏳ 我的申请审批中：任务 <b>' + myPending + '</b> 条，上架 <b>' + myShop + '</b> 条' + ((myPending + myShop) > 0 ? ' <span style="cursor:pointer;color:#a86b94;font-size:13px;" onclick="gotoSection(\'userTaskApplyArea\')">→ 前往</span>' : '') + '</div>';
     }
     document.getElementById("loginSummaryBody").innerHTML = html;
     document.getElementById("loginSummaryModal").classList.remove("hide");
