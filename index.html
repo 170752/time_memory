@@ -271,7 +271,7 @@ button:disabled{background:#bbb !important;box-shadow:none;cursor:not-allowed;op
 <h3>💫 新增一份小约定</h3>
 <div class="field"><textarea id="sendTaskText" placeholder="写下两个人之间想要完成的小事约定" rows="2"></textarea></div>
 <div class="field"><label>📝 私密随笔（仅我可见）</label><input type="text" id="sendTaskNote" placeholder="私密随笔"></div>
-<div class="row"><input type="number" id="sendPoint" class="grow" placeholder="完成可得积分" value="20"><select id="taskPriority" style="flex:0 0 108px;"><option value="imp">重要</option><option value="norm" selected>普通</option><option value="casual">随心</option></select></div>
+<div class="row"><input type="number" id="sendPoint" class="grow" placeholder="完成可得积分" value="20"></div>
 <div class="field"><label>⏰ 期望完成时间（选填）</label><input type="datetime-local" id="taskExpireTime"></div>
 <div class="row"><label style="display:flex;align-items:center;gap:8px;font-size:14px;flex:1 1 0;min-width:0;"><input type="checkbox" id="taskTopCheck" style="width:18px;height:18px;flex:none;">⭐ 置顶这条约定</label><button class="btn-purple" onclick="sendTaskMsg()">💾 保存约定</button></div>
 <div>
@@ -897,7 +897,7 @@ async function approvePendingTask(idx) {
     const pt = Math.round(Number(document.getElementById("approvePoint_" + idx).value));
     if (isNaN(pt) || pt < 0) { alert("请先设置任务积分（不能为负数）"); return; }
     t.basePoint = pt;
-    data.msgList.push({ text: t.text, basePoint: t.basePoint, note: t.note, expireTime: null, priority: t.priority || "norm", top: false, requester: "user" });
+    data.msgList.push({ text: t.text, basePoint: t.basePoint, note: t.note, expireTime: null, top: false, requester: "user" });
     t.status = "approved";
     t.handledTime = new Date().toLocaleString();
     await save(); render();
@@ -1497,10 +1497,9 @@ async function sendTaskMsg() {
     const bp = Number(document.getElementById("sendPoint").value);
     const note = document.getElementById("sendTaskNote").value.trim();
     const et = document.getElementById("taskExpireTime").value;
-    const pri = document.getElementById("taskPriority").value;
     const top = document.getElementById("taskTopCheck").checked;
     if (!t || bp <= 0) { alert("请填写约定内容与积分"); return; }
-    data.msgList.push({ text: t, basePoint: bp, note: note, expireTime: et || null, priority: pri, top: top });
+    data.msgList.push({ text: t, basePoint: bp, note: note, expireTime: et || null, top: top });
     await save(); render();
     document.getElementById("sendTaskText").value = "";
     document.getElementById("sendTaskNote").value = "";
@@ -1737,12 +1736,8 @@ function render() {
         const realIndex = data.msgList.indexOf(msg);
         const div = document.createElement("div");
         const expired = isTaskExpired(msg);
-        let priClass = "", priText = "";
-        if (msg.priority === "imp") { priClass = "item-imp"; priText = "重要"; }
-        else if (msg.priority === "norm") { priClass = "item-norm"; priText = "普通"; }
-        else if (msg.priority === "casual") { priClass = "item-casual"; priText = "随心"; }
-        div.className = expired ? "item-card item-expired" : (msg.top ? "item-card item-top " + priClass : "item-card " + priClass);
-        let html = '<div class="msg-title">💫约定：' + msg.text + "</div><div><span class=\"tag tag-" + msg.priority + "\">" + priText + '</span><span class="tag tag-wait">待兑现</span></div>';
+        div.className = expired ? "item-card item-expired" : (msg.top ? "item-card item-top" : "item-card");
+        let html = '<div class="msg-title">💫约定：' + msg.text + '</div><div><span class="tag tag-wait">待兑现</span></div>';
         if (msg.requester === "user") html += '<div style="color:#7c5fb0;font-size:12px;">📮 由' + getRoleShort("user") + '申请发布</div>';
         if (msg.top) html += '<div style="color:#c48744">⭐ 置顶约定</div>';
         if (expired) html += "<div>⚠️ 已过期望完成时间</div>";
