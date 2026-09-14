@@ -1408,6 +1408,14 @@ function showLoginSummary() {
         if (undone.length > 5) html += '<div style="color:#94848c;font-size:12px;">… 等共 ' + undone.length + ' 条</div>';
     }
     if (loginState.role === "admin") {
+        const confirmPending = data.waitConfirmTasks || [];
+        html += '<div style="margin-top:10px;">⏳ 待确认完成约定：<b>' + confirmPending.length + '</b></div>';
+        if (confirmPending.length > 0) {
+            confirmPending.slice(0, 3).forEach(t => {
+                html += '<div style="padding:2px 0 2px 12px;border-left:3px solid #b8d8c8;margin:4px 0;">• ' + t.text + '</div>';
+            });
+            if (confirmPending.length > 3) html += '<div style="color:#94848c;font-size:12px;">… 共 ' + confirmPending.length + ' 条</div>';
+        }
         html += '<div style="margin-top:10px;">📨 待审核任务申请：<b>' + taskPending.length + '</b></div>';
         html += '<div style="margin-top:4px;">🛒 待审核上架申请：<b>' + shopPending.length + '</b></div>';
         if (taskPending.length === 0 && shopPending.length === 0) html += '<div style="color:#94848c;font-size:12px;margin-top:2px;">没有待审核的申请 ✅</div>';
