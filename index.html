@@ -876,7 +876,6 @@ function backToRoomPage() {
     clearRoomSession(); showPage("room");
 }
 function leaveRoom() {
-    if (!confirm("⚠️ 确认退出当前房间？退出后本机回到配对页，云端数据保留。")) return;
     backToRoomPage();
 }
 
@@ -1281,7 +1280,7 @@ async function exchangeGoods(idx) {
     clampPoint(); await save(); render();
     alert("✅ 兑换【" + g.name + "】×" + n + " 成功，消耗" + total + "积分，当前积分：" + data.point + (removed ? "，该商品已兑换完，自动从商城下架" : "，剩余 " + g.qty + " 件"));
 }
-async function delShopGoods(idx) { data.shopGoods.splice(idx, 1); await save(); render(); }
+async function delShopGoods(idx) { const g = data.shopGoods[idx]; if (!g) return; if (!confirm("🗑️ 确认删除商品「" + g.name + "」？此操作不可恢复。")) return; data.shopGoods.splice(idx, 1); await save(); render(); }
 function renderShop() {
     const adminShopArea = document.getElementById("shopAdminArea");
     const shopWrap = document.getElementById("shopListWrap");
@@ -1922,6 +1921,7 @@ async function adminConfirmTask(confirmIdx, rate) {
 }
 async function delRecord(idx) {
     const rec = data.exchangeRecords[idx]; if (!rec) return;
+    if (!confirm("🗑️ 确认回滚并删除记录「" + rec.name + "」，积分 " + rec.cost + "？")) return;
     const delta = parseRecordPoint(rec.cost);
     data.point -= delta;
     pushPointHistory("回滚记录：" + rec.name);
