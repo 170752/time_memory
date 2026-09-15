@@ -933,6 +933,7 @@ function renderMyPendingList() {
         const div = document.createElement("div"); div.className = "item-card";
         let statusHtml = "";
         if (t.status === "approved") statusHtml = '<div style="color:#2d8a56;font-size:13px;">✅ 已同意 · 任务积分：' + t.basePoint + ' · 已进入待兑现清单</div>';
+        else if (t.status === "completed") statusHtml = '<div style="color:#2d8a56;font-size:13px;">✅ 已完成 · 获得 ' + (t.getPoint !== undefined ? t.getPoint : t.basePoint) + ' 积分</div>';
         else if (t.status === "rejected") statusHtml = '<div style="color:#b73b4f;font-size:13px;">❌ 已拒绝' + (t.rejectReason ? '｜理由：' + t.rejectReason : '') + '</div>';
         else statusHtml = '<div style="color:#c2602b;font-size:13px;">⏳ 等待' + getRoleShort("admin") + '审批中…</div>';
         div.innerHTML = '<div class="msg-title">📮 ' + t.text + '</div>' +
@@ -1595,6 +1596,11 @@ async function adminConfirmTask(confirmIdx, rate) {
     data.point += gp; clampPoint();
     pushPointHistory("约定完成：" + t.text + "，获得" + gp);
     data.finishTaskHistory.push({ text: t.text, basePoint: t.basePoint, getPoint: gp, rate: rate, note: t.note, requester: t.requester || "admin", time: new Date().toISOString() });
+    (data.pendingTasks || []).forEach(p => {
+        if (p.status === "approved" && p.text === t.text && (p.requester || "admin") === (t.requester || "admin")) {
+            p.status = "completed"; p.getPoint = gp; p.handledTime = new Date().toISOString();
+        }
+    });
     data.waitConfirmTasks.splice(confirmIdx, 1);
     await save(); render();
     alert("✅ 确认完成，完成度" + (rate * 100) + "%，积分+" + gp);
