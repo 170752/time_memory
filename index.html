@@ -101,12 +101,14 @@ button:disabled{background:#bbb !important;box-shadow:none;cursor:not-allowed;op
 .chat-row{display:flex;margin:8px 0;width:100%;}
 .chat-row.me{justify-content:flex-end;}
 .chat-row.other{justify-content:flex-start;}
-.chat-bubble{max-width:78%;padding:9px 13px;border-radius:16px;font-size:14px;word-break:break-word;line-height:1.5;box-shadow:0 2px 6px rgba(168,107,148,.12);}
-.chat-bubble.me{background:linear-gradient(135deg,#eadff6,#dfd0f0);border-bottom-right-radius:5px;}
-.chat-bubble.other{background:linear-gradient(135deg,#fef5fa,#fbe9f3);border-bottom-left-radius:5px;}
+.chat-bubble{max-width:78%;padding:10px 14px;border-radius:18px;font-size:14px;word-break:break-word;line-height:1.55;box-shadow:0 3px 10px rgba(168,107,148,.14);}
+.chat-bubble.me{background:linear-gradient(135deg,#a86b94,#8f5a8c);color:#fff;border-bottom-right-radius:6px;}
+.chat-bubble.other{background:#fff;border:1px solid #f3dfec;border-bottom-left-radius:6px;}
 .chat-bubble.recalled{background:#f2f0f1;color:#9a8f95;font-style:italic;box-shadow:none;}
-.recall-btn{display:inline-block;margin-top:4px;font-size:11px;color:#a86b94;cursor:pointer;background:none;border:none;padding:0;height:auto;flex:none;box-shadow:none;}
+.recall-btn{display:inline-block;margin-top:4px;font-size:11px;color:#e8c4da;cursor:pointer;background:none;border:none;padding:0;height:auto;flex:none;box-shadow:none;}
+.recall-btn:hover{filter:none;transform:none;box-shadow:none;color:#f3dcec;}
 .chat-head{font-size:11px;color:#9a8496;margin-bottom:4px;display:block;}
+.chat-bubble.me .chat-head{color:#f0d6e6;}
 .login-box{padding:28px 10px;text-align:center;}
 .room-box{padding:24px 8px;text-align:center;}
 .room-sub{color:var(--text-sub);margin-bottom:22px;font-size:14px;}
@@ -144,6 +146,21 @@ button:disabled{background:#bbb !important;box-shadow:none;cursor:not-allowed;op
     .stat-row{grid-template-columns:1fr 1fr;gap:8px;}
     .top-bar{font-size:12px;}
 }
+/* ===== 深色主题 ===== */
+body.dark{--primary:#c9a0bc;--primary-dark:#e5bcd8;--primary-deep:#f0c9e3;--primary-soft:#2a2030;--card-bg:#2a2130;--card-soft:#332838;--text-main:#e9d9e4;--text-sub:#c4afbe;--text-light:#a793a3;--border:#4b3b52;--border-dash:#56425e;--danger:#f07a8a;--success:#6fc99a;--grad-main:linear-gradient(135deg,#b988c0,#a86b94 55%,#8f5a8c);--grad-soft:linear-gradient(160deg,#2a2030,#241b29);--grad-card:linear-gradient(180deg,#2d2333,#272030);--shadow-card:0 10px 32px rgba(0,0,0,.4),0 2px 8px rgba(0,0,0,.25);--shadow-item:0 4px 14px rgba(0,0,0,.3);--shadow-pop:0 20px 50px rgba(0,0,0,.55);}
+body.dark{background:linear-gradient(160deg,#241c2a 0%,#1e1723 45%,#241c2a 100%);}
+body.dark::before{background:radial-gradient(closest-side,rgba(150,100,160,.18),transparent);}
+body.dark .container{border-color:rgba(95,70,105,.6);}
+body.dark input,body.dark textarea,body.dark select{background:#3a2d42;border-color:var(--border);color:var(--text-main);}
+body.dark .item-card,body.dark .secret-item,body.dark .level-modal-box{background:#2a2130;}
+body.dark .mood-item,body.dark .shop-item{background:linear-gradient(160deg,#332838,#2c2332);}
+body.dark .record-item{background:var(--primary-soft);}
+body.dark .msg-list{background:linear-gradient(180deg,#2a2130,#272030);border-color:var(--border);}
+body.dark .chat-bubble.other{background:#3a2d42;border-color:var(--border);color:var(--text-main);}
+body.dark .chat-bubble.recalled{background:#352c3c;color:#a793a3;}
+body.dark .chat-head{color:#c4afbe;}
+body.dark .chat-bubble.me .chat-head{color:#f0d6e6;}
+body.dark .top-bar,body.dark .level-up-text{color:#c4afbe;}
 </style>
 </head>
 <body>
@@ -205,14 +222,14 @@ button:disabled{background:#bbb !important;box-shadow:none;cursor:not-allowed;op
 <div class="stat-line"><span>📊 约定统计</span><span>总计 <b id="totalTask">0</b>｜已完成 <b id="doneTask">0</b>｜待兑现 <b id="waitTask">0</b>｜兑现率 <b id="finishRate">0</b>%</span></div>
 </div>
 <div class="info-card">
-<h3 style="display:flex;justify-content:space-between;align-items:center;"><span>💬 即时消息<span id="onlineBadge" class="online-badge offline">⚪ 好友离线</span></span><button class="btn-purple btn-sm" onclick="openSecretModal()">💌 悄悄话<span id="secretBadge" class="secret-badge hide">0</span></button></h3>
+<h3 style="display:flex;justify-content:space-between;align-items:center;"><span>💬 即时消息<span id="msgUnreadBadge" class="secret-badge hide" onclick="markMsgRead()" style="cursor:pointer;">0</span><span id="onlineBadge" class="online-badge offline">⚪ 好友离线</span></span><button class="btn-purple btn-sm" onclick="openSecretModal()">💌 悄悄话<span id="secretBadge" class="secret-badge hide">0</span></button></h3>
 <div id="instantMsgList" class="msg-list"></div>
 <div class="row" style="margin-bottom:0;"><input type="text" id="instantMsgInput" class="grow" placeholder="写句话发给伙伴" autocomplete="off"><button class="btn-purple" onclick="sendInstantMsg()">📤 发送</button></div>
 </div>
 <div class="info-card">
 <h3>🌿 情绪小记</h3>
 <div class="row">
-<select id="moodSelect" style="flex:0 0 auto;width:112px;"><option value="平静">😌平静</option><option value="开心">😊开心</option><option value="愉悦">🥰愉悦</option><option value="疲惫">😔疲惫</option><option value="烦躁">😤烦躁</option><option value="低落">😞低落</option></select>
+<select id="moodSelect" style="flex:0 0 auto;width:150px;"><option value="平静">😌平静</option><option value="开心">😊开心</option><option value="愉悦">🥰愉悦</option><option value="兴奋">🤗兴奋</option><option value="期待">🤩期待</option><option value="思念">💭思念</option><option value="感动">🥹感动</option><option value="疲惫">😔疲惫</option><option value="委屈">🥺委屈</option><option value="烦躁">😤烦躁</option><option value="生气">😠生气</option><option value="低落">😞低落</option></select>
 <input type="text" id="moodNote" class="grow" placeholder="记录当下心情">
 </div>
 <div class="btn-row"><button class="btn-purple" onclick="addMoodRecord()">💾 保存情绪</button></div>
@@ -486,6 +503,17 @@ function ensureDataFields(d) {
     return d;
 }
 ensureDataFields(data);
+function applyTheme() {
+    const dark = localStorage.getItem("loveTheme") === "dark";
+    document.body.classList.toggle("dark", dark);
+    const b = document.getElementById("themeToggle");
+    if (b) b.innerText = dark ? "☀️" : "🌙";
+}
+function toggleTheme() {
+    localStorage.setItem("loveTheme", document.body.classList.contains("dark") ? "light" : "dark");
+    applyTheme();
+}
+applyTheme();
 let loginState = JSON.parse(sessionStorage.getItem("loveLoginState")) || { isLogin: false, role: "" };
 let chartFilter = "all";
 let pointChart = null;
@@ -1097,7 +1125,7 @@ async function addMoodRecord() {
     data.moodList.unshift({ roleKey: loginState.role, role: rn, mood: mt, note: mn, time: new Date().toLocaleString() });
     await save(); render(); document.getElementById("moodNote").value = "";
 }
-const MOOD_EMOJI = { "平静": "😌", "开心": "😊", "愉悦": "🥰", "疲惫": "😔", "烦躁": "😤", "低落": "😞" };
+const MOOD_EMOJI = { "平静": "😌", "开心": "😊", "愉悦": "🥰", "兴奋": "🤗", "期待": "🤩", "思念": "💭", "感动": "🥹", "疲惫": "😔", "委屈": "🥺", "烦躁": "😤", "生气": "😠", "低落": "😞" };
 function moodRoleKey(item) {
     if (item.roleKey) return item.roleKey;
     const aNames = [pwdConfig.nickA, "A伙伴"].filter(Boolean);
@@ -1231,6 +1259,7 @@ async function exchangeGoods(idx) {
         if (isNaN(n) || n < 1 || n > qty) { alert("数量无效，请输入 1~" + qty + " 之间的整数"); return; }
     }
     const total = g.cost * n;
+    if (!confirm("🛒 确认兑换「" + g.name + "」" + (n > 1 ? "×" + n : "") + "？\n将消耗 " + total + " 积分，当前积分 " + data.point + "。")) return;
     const diff = Math.abs(data.point - total);
     if (diff > MAX_EXCHANGE_DIFF) { alert("❌ 不可兑换！当前积分" + data.point + "，需" + total + "积分。差值" + diff + "，最大允许差值" + MAX_EXCHANGE_DIFF); return; }
     data.point -= total;
@@ -1355,6 +1384,8 @@ async function sendInstantMsg() {
     const msg = { role: loginState.role, roleName: roleName, text: txt, time: new Date().toLocaleString() };
     if (!data.messages) data.messages = [];
     data.messages.push(msg);
+    if (!data.msgReadPos || typeof data.msgReadPos !== "object") data.msgReadPos = {};
+    data.msgReadPos[loginState.role] = (data.messages || []).filter(m => m.role && m.role !== loginState.role).length;
     if (!data.sendCount || typeof data.sendCount !== "object") data.sendCount = { admin: 0, user: 0 };
     data.sendCount[loginState.role] = (data.sendCount[loginState.role] || 0) + 1;
     const latestMood = data.moodList && data.moodList[0];
@@ -1744,6 +1775,30 @@ function checkFinishTip() {
     } else if (cnt < lastFinishSeen) { lastFinishSeen = cnt; }
 }
 let lastExchangeSeen = -1;
+function calcMsgUnread() {
+    if (!loginState.isLogin || !data) return 0;
+    const me = loginState.role;
+    const otherMsgs = (data.messages || []).filter(m => m.role && m.role !== me);
+    if (!data.msgReadPos || typeof data.msgReadPos !== "object") data.msgReadPos = {};
+    if (data.msgReadPos[me] === undefined) data.msgReadPos[me] = otherMsgs.length;
+    return Math.max(0, otherMsgs.length - data.msgReadPos[me]);
+}
+function markMsgRead() {
+    if (!loginState.isLogin || !data) return;
+    const me = loginState.role;
+    const otherMsgs = (data.messages || []).filter(m => m.role && m.role !== me);
+    if (!data.msgReadPos || typeof data.msgReadPos !== "object") data.msgReadPos = {};
+    data.msgReadPos[me] = otherMsgs.length;
+    save();
+    renderMsgUnread();
+}
+function renderMsgUnread() {
+    const b = document.getElementById("msgUnreadBadge");
+    if (!b) return;
+    const n = calcMsgUnread();
+    if (n > 0) { b.innerText = n; b.classList.remove("hide"); }
+    else b.classList.add("hide");
+}
 function checkExchangeTip() {
     if (!loginState.isLogin || loginState.role !== "admin") return;
     if (!data.shopRecords) return;
@@ -2185,6 +2240,7 @@ function render() {
     renderSecretBadge();
     checkSecretNotify();
     renderOnlineBadge();
+    renderMsgUnread();
     subscribePresence();
     checkFinishTip();
     checkExchangeTip();
@@ -2206,5 +2262,6 @@ window.addEventListener("load", function () {
     }
 });
 </script>
+<button id="themeToggle" onclick="toggleTheme()" title="切换深浅色" style="position:fixed;bottom:18px;right:18px;z-index:999;width:46px;height:46px;border-radius:50%;font-size:20px;background:var(--grad-main);box-shadow:0 6px 18px rgba(168,107,148,.35);border:2px solid rgba(255,255,255,.5);">🌙</button>
 </body>
 </html>
