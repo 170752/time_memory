@@ -31,6 +31,8 @@ button:active{transform:scale(.96);}
 button:disabled{background:#bbb !important;box-shadow:none;cursor:not-allowed;opacity:.7;transform:none;}
 .btn-exit{background:linear-gradient(135deg,#b3a7ad,#9a8f96);}.btn-blue{background:linear-gradient(135deg,#9d8cc9,#7d6ab0);}.btn-green{background:linear-gradient(135deg,#6ec79a,#4da87d);}.btn-red{background:linear-gradient(135deg,#e8747f,#d24a5f);}.btn-orange{background:linear-gradient(135deg,#eda97e,#dd8a5a);}.btn-purple{background:var(--grad-main);}
 .btn-sm{height:34px;padding:0 12px;font-size:12.5px;border-radius:10px;box-shadow:0 3px 8px rgba(168,107,148,.16);}
+.btn-more{display:block;margin:10px auto 4px;padding:8px 24px;border-radius:20px;background:linear-gradient(135deg,#f7e2ef,#eccfdf);color:#8a5a78;border:1px solid #f0d4e4;font-size:13px;cursor:pointer;box-shadow:0 2px 8px rgba(168,107,148,.14);transition:transform .15s,box-shadow .15s;}
+.btn-more:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(168,107,148,.25);}
 .row{display:flex;gap:var(--gap);margin:10px 0;flex-wrap:wrap;align-items:center;}
 .row>.grow{flex:1 1 0;min-width:0;}
 .stat-line{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;font-size:14px;margin:4px 0;}
@@ -934,9 +936,9 @@ async function rejectPendingTask(idx) {
     await save(); render();
     alert(t.rejectReason ? "已拒绝，理由已告知申请人" : "已拒绝该任务申请");
 }
-let applyShowCount = 20;
+let applyShowCount = 6;
 function loadMoreApply() {
-    applyShowCount += 20;
+    applyShowCount += 6;
     renderMyPendingList();
 }
 function renderMyPendingList() {
@@ -959,7 +961,7 @@ function renderMyPendingList() {
     if (mine.length > applyShowCount) {
         const more = document.createElement("div");
         more.style.textAlign = "center";
-        more.innerHTML = '<button class="btn-blue btn-sm" onclick="loadMoreApply()">📜 查看更早申请（' + (mine.length - applyShowCount) + ' 条）</button>';
+        more.innerHTML = '<button class="btn-more" onclick="loadMoreApply()">📜 查看更早申请（' + (mine.length - applyShowCount) + ' 条）</button>';
         w.appendChild(more);
     }
 }
@@ -1113,7 +1115,7 @@ function renderMoodList() {
     if (data.moodList.length > moodShowCount) {
         const more = document.createElement("div");
         more.style.textAlign = "center";
-        more.innerHTML = '<button class="btn-blue btn-sm" onclick="loadMoreMood()">📜 查看更早心情（' + (data.moodList.length - moodShowCount) + ' 条）</button>';
+        more.innerHTML = '<button class="btn-more" onclick="loadMoreMood()">📜 查看更早心情（' + (data.moodList.length - moodShowCount) + ' 条）</button>';
         w.appendChild(more);
     }
 }
@@ -1152,8 +1154,8 @@ async function rejectShopApply(idx) {
     await save(); render();
     alert(a.rejectReason ? "已驳回，理由已告知申请人" : "已驳回该上架申请");
 }
-let shopApplyShowCount = 20;
-function loadMoreShopApply() { shopApplyShowCount += 20; renderShopApply(); }
+let shopApplyShowCount = 6;
+function loadMoreShopApply() { shopApplyShowCount += 6; renderShopApply(); }
 function renderShopApply() {
     const pw = document.getElementById("shopApplyPendingWrap");
     if (pw) {
@@ -1194,7 +1196,7 @@ function renderShopApply() {
             });
             if (mine.length > shopApplyShowCount) {
                 const more = document.createElement("div"); more.style.textAlign = "center";
-                more.innerHTML = '<button class="btn-blue btn-sm" onclick="loadMoreShopApply()">📜 查看更早申请（' + (mine.length - shopApplyShowCount) + ' 条）</button>';
+                more.innerHTML = '<button class="btn-more" onclick="loadMoreShopApply()">📜 查看更早申请（' + (mine.length - shopApplyShowCount) + ' 条）</button>';
                 mw.appendChild(more);
             }
         }
@@ -1261,16 +1263,22 @@ function renderShop() {
     if (!data.shopRecords || data.shopRecords.length === 0) {
         recWrap.innerHTML = '<div style="padding:6px;color:#84747c;font-size:13px;">暂无兑换记录</div>';
     } else {
-        data.shopRecords.forEach(r => {
+        data.shopRecords.slice(0, shopRecShowCount).forEach(r => {
             const div = document.createElement("div"); div.style.fontSize = "13px"; div.style.margin = "4px 0";
             div.innerText = r.time + "｜兑换：" + r.goodsName + (r.qty && r.qty > 1 ? "×" + r.qty : "") + "，消耗" + r.cost + "积分";
             recWrap.appendChild(div);
         });
+        if (data.shopRecords.length > shopRecShowCount) {
+            const more = document.createElement("div");
+            more.style.textAlign = "center";
+            more.innerHTML = '<button class="btn-more" onclick="loadMoreShopRec()">📜 查看更早兑换（' + (data.shopRecords.length - shopRecShowCount) + ' 条）</button>';
+            recWrap.appendChild(more);
+        }
     }
 }
-let chatShowCount = 30;
+let chatShowCount = 6;
 function loadMoreChat() {
-    chatShowCount += 30;
+    chatShowCount += 6;
     renderInstantMessages();
     const wrap = document.getElementById("instantMsgList");
     if (wrap) wrap.scrollTop = 0;
@@ -1286,7 +1294,7 @@ function renderInstantMessages() {
     if (msgs.length > chatShowCount) {
         const more = document.createElement("div");
         more.style.textAlign = "center";
-        more.innerHTML = '<button class="btn-blue btn-sm" onclick="loadMoreChat()">📜 查看更早消息（' + (msgs.length - chatShowCount) + ' 条）</button>';
+        more.innerHTML = '<button class="btn-more" onclick="loadMoreChat()">📜 查看更早消息（' + (msgs.length - chatShowCount) + ' 条）</button>';
         wrap.appendChild(more);
     }
     const arr = msgs.slice(-chatShowCount);
@@ -1357,18 +1365,26 @@ function renderSecretBadge() {
     const b = document.getElementById("secretBadge");
     if (b) { b.innerText = unread > 99 ? "99+" : unread; b.classList.toggle("hide", unread === 0); }
 }
+let secretShowCount = 6;
+function loadMoreSecret() { secretShowCount += 6; renderSecretList(); }
 function renderSecretList() {
     const w = document.getElementById("secretMsgList"); if (!w) return;
     w.innerHTML = "";
     const list = data.secretMsgs || [];
     if (!list.length) { w.innerHTML = '<div style="color:#94848c;text-align:center;padding:14px;">还没有悄悄话，写一句吧～</div>'; return; }
-    list.forEach(m => {
+    list.slice(0, secretShowCount).forEach(m => {
         const mine = m.from === loginState.role;
         const div = document.createElement("div");
         div.className = "secret-item" + (!mine && !m.read ? " unread" : "");
         div.innerHTML = '<div class="secret-head">' + (mine ? "💜 我" : getRoleName(m.from)) + " · " + m.time + (mine ? "" : (!m.read ? ' <span style="color:#d46874;">· 未读</span>' : "")) + '</div><div>' + m.text + '</div>';
         w.appendChild(div);
     });
+    if (list.length > secretShowCount) {
+        const more = document.createElement("div");
+        more.style.textAlign = "center";
+        more.innerHTML = '<button class="btn-more" onclick="loadMoreSecret()">📜 查看更早悄悄话（' + (list.length - secretShowCount) + ' 条）</button>';
+        w.appendChild(more);
+    }
     w.scrollTop = w.scrollHeight;
 }
 async function openSecretModal() {
@@ -1534,7 +1550,8 @@ function login() {
     } else { alert("密码不对，请重新输入"); return; }
     localStorage.setItem("loveRememberedLogin", JSON.stringify({ role: loginState.role, pwd: pwd }));
     sessionStorage.removeItem("secretNotified");
-    chatShowCount = 30; moodShowCount = 6; applyShowCount = 20;
+    chatShowCount = 6; moodShowCount = 6; applyShowCount = 6; shopApplyShowCount = 6;
+    finishShowCount = 6; recShowCount = 6; shopRecShowCount = 6; secretShowCount = 6;
     lastFinishSeen = -1;
     sessionStorage.setItem("loveLoginState", JSON.stringify(loginState)); render();
     setTimeout(showLoginSummary, 600);
@@ -1795,6 +1812,12 @@ function checkBadgeUnlocks() {
 }
 
 /* ---------------- 渲染 ---------------- */
+let finishShowCount = 6;
+function loadMoreFinish() { finishShowCount += 6; render(); }
+let recShowCount = 6;
+function loadMoreRec() { recShowCount += 6; render(); }
+let shopRecShowCount = 6;
+function loadMoreShopRec() { shopRecShowCount += 6; renderShop(); }
 function render() {
     if (!loginState.isLogin) { showPage("login"); return; }
     document.getElementById("loginPage").classList.add("hide");
@@ -1871,12 +1894,18 @@ function render() {
     if (data.finishTaskHistory.length === 0) {
         finishBox.innerHTML = '<div style="padding:10px;color:#84747c">还没有已经完成的约定</div>';
     } else {
-        data.finishTaskHistory.forEach(h => {
+        data.finishTaskHistory.slice(0, finishShowCount).forEach(h => {
             const div = document.createElement("div"); div.className = "item-card";
             div.innerHTML = "<div>✅ " + h.text + "</div><div>基础分：" + h.basePoint + "｜实际获得：" + h.getPoint + "｜完成度：" + (h.rate * 100) + "%</div>" +
                 (h.note ? (h.requester === "user" ? '<div class="item-note" style="color:#9a8a92;">🔒 私密随笔仅申请人可见</div>' : '<div class="item-note">📝 随笔：' + h.note + "</div>") : "");
             finishBox.appendChild(div);
         });
+        if (data.finishTaskHistory.length > finishShowCount) {
+            const more = document.createElement("div");
+            more.style.textAlign = "center";
+            more.innerHTML = '<button class="btn-more" onclick="loadMoreFinish()">📜 查看更早完成（' + (data.finishTaskHistory.length - finishShowCount) + ' 条）</button>';
+            finishBox.appendChild(more);
+        }
     }
 
     const recUnlock = document.getElementById("recordUnlockArea");
@@ -1914,16 +1943,19 @@ function render() {
         if (recTotal === 0) {
             recBox.innerHTML = '<div style="padding:10px;color:#84747c">暂无手动调整记录</div>';
         } else {
-            recList.forEach((r, idx) => {
-                if (loginState.role === "user") {
-                    if (isPlusRec(r) && !plusUnlocked) return;
-                    if (!isPlusRec(r) && !minusUnlocked) return;
-                }
+            const visibleRec = loginState.role === "admin" ? recList : recList.filter(r => (isPlusRec(r) && plusUnlocked) || (!isPlusRec(r) && minusUnlocked));
+            visibleRec.slice(0, recShowCount).forEach(r => {
                 const div = document.createElement("div"); div.className = "record-item";
                 div.innerHTML = '<div class="record-name">' + r.name + "，" + r.cost + "</div>" +
-                    (loginState.role === "admin" ? '<button class="btn-exit btn-sm" onclick="delRecord(' + idx + ')">回滚</button>' : "");
+                    (loginState.role === "admin" ? '<button class="btn-exit btn-sm" onclick="delRecord(' + data.exchangeRecords.indexOf(r) + ')">回滚</button>' : "");
                 recBox.appendChild(div);
             });
+            if (visibleRec.length > recShowCount) {
+                const more = document.createElement("div");
+                more.style.textAlign = "center";
+                more.innerHTML = '<button class="btn-more" onclick="loadMoreRec()">📜 查看更早记录（' + (visibleRec.length - recShowCount) + ' 条）</button>';
+                recBox.appendChild(more);
+            }
         }
     }
     renderChart();
