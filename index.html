@@ -1451,9 +1451,7 @@ function showTodoSummary() {
     document.getElementById("loginSummaryCloseBtn").setAttribute("onclick", "closeLoginSummary()");
     let html = "";
     if (loginState.role === "user") {
-        if (undone.length === 0) {
-            html += '<div>📋 未完成任务：<b>无</b> 🎉</div>';
-        } else {
+        if (undone.length > 0) {
             html += '<div>📋 未完成任务（<b>' + undone.length + '</b>）：<span style="cursor:pointer;color:#a86b94;font-size:13px;" onclick="gotoSection(\'msgList\')">→ 前往</span></div>';
             undone.slice(0, 5).forEach(m => {
                 html += '<div style="padding:2px 0 2px 12px;border-left:3px solid #e8c8dd;margin:4px 0;">• ' + m.text + '</div>';
@@ -1462,16 +1460,19 @@ function showTodoSummary() {
         }
     }
     if (loginState.role === "admin") {
-        html += '<div style="margin-top:10px;">⏳ 待确认完成约定：<b>' + confirmPending.length + '</b>' + (confirmPending.length > 0 ? ' <span style="cursor:pointer;color:#a86b94;font-size:13px;" onclick="gotoSection(\'adminConfirmTaskList\')">→ 前往</span>' : '') + '</div>';
         if (confirmPending.length > 0) {
+            html += '<div style="margin-top:10px;">⏳ 待确认完成约定：<b>' + confirmPending.length + '</b>' + ' <span style="cursor:pointer;color:#a86b94;font-size:13px;" onclick="gotoSection(\'adminConfirmTaskList\')">→ 前往</span></div>';
             confirmPending.slice(0, 3).forEach(t => {
                 html += '<div style="padding:2px 0 2px 12px;border-left:3px solid #b8d8c8;margin:4px 0;">• ' + t.text + '</div>';
             });
             if (confirmPending.length > 3) html += '<div style="color:#94848c;font-size:12px;">… 共 ' + confirmPending.length + ' 条</div>';
         }
-        html += '<div style="margin-top:10px;">📨 待审核任务申请：<b>' + taskPending.length + '</b>' + (taskPending.length > 0 ? ' <span style="cursor:pointer;color:#a86b94;font-size:13px;" onclick="gotoSection(\'adminPendingList\')">→ 前往</span>' : '') + '</div>';
-        html += '<div style="margin-top:4px;">🛒 待审核上架申请：<b>' + shopPending.length + '</b>' + (shopPending.length > 0 ? ' <span style="cursor:pointer;color:#a86b94;font-size:13px;" onclick="gotoSection(\'shopApplyPendingWrap\')">→ 前往</span>' : '') + '</div>';
-        if (taskPending.length === 0 && shopPending.length === 0) html += '<div style="color:#94848c;font-size:12px;margin-top:2px;">没有待审核的申请 ✅</div>';
+        if (taskPending.length > 0) {
+            html += '<div style="margin-top:10px;">📨 待审核任务申请：<b>' + taskPending.length + '</b>' + ' <span style="cursor:pointer;color:#a86b94;font-size:13px;" onclick="gotoSection(\'adminPendingList\')">→ 前往</span></div>';
+        }
+        if (shopPending.length > 0) {
+            html += '<div style="margin-top:4px;">🛒 待审核上架申请：<b>' + shopPending.length + '</b>' + ' <span style="cursor:pointer;color:#a86b94;font-size:13px;" onclick="gotoSection(\'shopApplyPendingWrap\')">→ 前往</span></div>';
+        }
     }
     document.getElementById("loginSummaryBody").innerHTML = html;
     document.getElementById("loginSummaryModal").classList.remove("hide");
