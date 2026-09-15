@@ -365,7 +365,7 @@ button:disabled{background:#bbb !important;box-shadow:none;cursor:not-allowed;op
 <div class="level-modal-box" style="width:min(400px,92%);">
 <div class="level-up-title" id="loginSummaryTitle">📋 今日备忘</div>
 <div id="loginSummaryBody" style="text-align:left;margin:10px 0;max-height:60vh;overflow-y:auto;font-size:14px;line-height:1.9;color:#5c4b55;"></div>
-<button class="btn-purple" onclick="closeGreetingAndCheck()">✅ 知道啦</button>
+<button class="btn-purple" id="loginSummaryCloseBtn" onclick="closeGreetingAndCheck()">✅ 知道啦</button>
 </div>
 </div>
 
@@ -1423,6 +1423,7 @@ function showGreetingSummary() {
     const g = getGreeting();
     document.getElementById("loginSummaryTitle").innerText = g.greet;
     document.getElementById("loginSummaryBody").innerHTML = '<div style="font-size:17px;line-height:2.1;text-align:center;padding:10px 4px;color:#5c4b55;">' + g.line + '</div><div style="text-align:center;color:#a86b94;font-size:13px;margin-top:2px;">今天也要开开心心哦~</div>';
+    document.getElementById("loginSummaryCloseBtn").setAttribute("onclick", "closeGreetingAndCheck()");
     document.getElementById("loginSummaryModal").classList.remove("hide");
 }
 function hasTodoItems() {
@@ -1447,6 +1448,7 @@ function showTodoSummary() {
     const shopPending = (data.shopApplies || []).filter(x => x.status === "pending");
     const confirmPending = data.waitConfirmTasks || [];
     document.getElementById("loginSummaryTitle").innerText = "📋 今日备忘";
+    document.getElementById("loginSummaryCloseBtn").setAttribute("onclick", "closeLoginSummary()");
     let html = "";
     if (loginState.role === "user") {
         if (undone.length === 0) {
