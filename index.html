@@ -379,6 +379,14 @@ button:disabled{background:#bbb !important;box-shadow:none;cursor:not-allowed;op
 </div>
 </div>
 
+<!-- 兑换提示弹窗 -->
+<div id="exchangeTipModal" class="level-modal hide">
+<div class="level-modal-box" style="width:min(380px,92%);">
+<div id="exchangeTipText" class="level-up-text" style="text-align:center;font-size:16px;line-height:2;color:#5c4b55;margin:8px 0;"></div>
+<button class="btn-purple" onclick="toggleHide('exchangeTipModal')">🛒 知道啦</button>
+</div>
+</div>
+
 <!-- 悄悄话未读提示弹窗 -->
 <div id="onlineToast" class="online-toast hide"></div>
 <div id="secretPopup" class="level-modal hide">
@@ -1541,6 +1549,22 @@ function checkFinishTip() {
         }
     } else if (cnt < lastFinishSeen) { lastFinishSeen = cnt; }
 }
+let lastExchangeSeen = -1;
+function checkExchangeTip() {
+    if (!loginState.isLogin || loginState.role !== "admin") return;
+    if (!data.shopRecords) return;
+    const cnt = data.shopRecords.length;
+    if (lastExchangeSeen === -1) { lastExchangeSeen = cnt; return; }
+    if (cnt > lastExchangeSeen) {
+        const newOnes = data.shopRecords.slice(0, cnt - lastExchangeSeen);
+        lastExchangeSeen = cnt;
+        const r = newOnes[0];
+        if (r) {
+            document.getElementById("exchangeTipText").innerHTML = '🛒 ' + getRoleName("user") + ' 兑换了「' + r.goodsName + '」' + (r.qty && r.qty > 1 ? '×' + r.qty : '') + '，消耗 <b>' + r.cost + '</b> 积分';
+            document.getElementById("exchangeTipModal").classList.remove("hide");
+        }
+    } else if (cnt < lastExchangeSeen) { lastExchangeSeen = cnt; }
+}
 function login() {
     const pwd = document.getElementById("pwdInput").value.trim();
     if (pwd === pwdConfig.admin.trim()) {
@@ -1552,7 +1576,7 @@ function login() {
     sessionStorage.removeItem("secretNotified");
     chatShowCount = 6; moodShowCount = 6; applyShowCount = 6; shopApplyShowCount = 6;
     finishShowCount = 6; recShowCount = 6; shopRecShowCount = 6; secretShowCount = 6;
-    lastFinishSeen = -1;
+    lastFinishSeen = -1; lastExchangeSeen = -1;
     sessionStorage.setItem("loveLoginState", JSON.stringify(loginState)); render();
     setTimeout(showLoginSummary, 600);
 }
@@ -1969,6 +1993,7 @@ function render() {
     renderOnlineBadge();
     subscribePresence();
     checkFinishTip();
+    checkExchangeTip();
 }
 
 /* ---------------- 初始化 ---------------- */
