@@ -1093,9 +1093,9 @@ function moodRoleKey(item) {
     const aNames = [pwdConfig.nickA, "A伙伴"].filter(Boolean);
     return aNames.indexOf(item.role) >= 0 ? "admin" : "user";
 }
-let moodShowCount = 12;
+let moodShowCount = 6;
 function loadMoreMood() {
-    moodShowCount += 12;
+    moodShowCount += 6;
     renderMoodList();
 }
 function renderMoodList() {
@@ -1534,7 +1534,7 @@ function login() {
     } else { alert("密码不对，请重新输入"); return; }
     localStorage.setItem("loveRememberedLogin", JSON.stringify({ role: loginState.role, pwd: pwd }));
     sessionStorage.removeItem("secretNotified");
-    chatShowCount = 30; moodShowCount = 12; applyShowCount = 20;
+    chatShowCount = 30; moodShowCount = 6; applyShowCount = 20;
     lastFinishSeen = -1;
     sessionStorage.setItem("loveLoginState", JSON.stringify(loginState)); render();
     setTimeout(showLoginSummary, 600);
