@@ -369,6 +369,14 @@ button:disabled{background:#bbb !important;box-shadow:none;cursor:not-allowed;op
 </div>
 </div>
 
+<!-- 约定完成提示弹窗 -->
+<div id="finishTipModal" class="level-modal hide">
+<div class="level-modal-box" style="width:min(380px,92%);">
+<div id="finishTipText" class="level-up-text" style="text-align:center;font-size:16px;line-height:2;color:#5c4b55;margin:8px 0;"></div>
+<button class="btn-purple" onclick="toggleHide('finishTipModal')">🎉 太好啦</button>
+</div>
+</div>
+
 <!-- 悄悄话未读提示弹窗 -->
 <div id="onlineToast" class="online-toast hide"></div>
 <div id="secretPopup" class="level-modal hide">
@@ -1485,6 +1493,22 @@ function gotoSection(id) {
     }, 200);
 }
 function closeLoginSummary() { document.getElementById("loginSummaryModal").classList.add("hide"); }
+let lastFinishSeen = -1;
+function checkFinishTip() {
+    if (!loginState.isLogin || loginState.role !== "user") return;
+    if (!data.finishTaskHistory) return;
+    const cnt = data.finishTaskHistory.length;
+    if (lastFinishSeen === -1) { lastFinishSeen = cnt; return; }
+    if (cnt > lastFinishSeen) {
+        const newOnes = data.finishTaskHistory.slice(lastFinishSeen);
+        lastFinishSeen = cnt;
+        const h = newOnes[newOnes.length - 1];
+        if (h) {
+            document.getElementById("finishTipText").innerHTML = '🎉 约定「' + h.text + '」已完成，获得 <b>' + h.getPoint + '</b> 积分！';
+            document.getElementById("finishTipModal").classList.remove("hide");
+        }
+    } else if (cnt < lastFinishSeen) { lastFinishSeen = cnt; }
+}
 function login() {
     const pwd = document.getElementById("pwdInput").value.trim();
     if (pwd === pwdConfig.admin.trim()) {
@@ -1495,6 +1519,7 @@ function login() {
     localStorage.setItem("loveRememberedLogin", JSON.stringify({ role: loginState.role, pwd: pwd }));
     sessionStorage.removeItem("secretNotified");
     chatShowCount = 30; moodShowCount = 12; applyShowCount = 20;
+    lastFinishSeen = -1;
     sessionStorage.setItem("loveLoginState", JSON.stringify(loginState)); render();
     setTimeout(showLoginSummary, 600);
 }
@@ -1562,7 +1587,7 @@ async function submitTaskFinish(taskIdx) {
     if (isTaskExpired(task)) { alert("已经过了期望时间，无法标记完成"); return; }
     data.waitConfirmTasks.push({ text: task.text, basePoint: task.basePoint, note: task.note, originIndex: taskIdx, requester: task.requester || "admin" });
     data.msgList.splice(taskIdx, 1);
-    await save(); render(); alert("✅ 已标记做完，等待对方确认");
+    await save(); render(); alert("✅ 已标记做完，等待" + getRoleShort("admin") + "确认");
 }
 async function adminConfirmTask(confirmIdx, rate) {
     const t = data.waitConfirmTasks[confirmIdx];
@@ -1890,6 +1915,7 @@ function render() {
     checkSecretNotify();
     renderOnlineBadge();
     subscribePresence();
+    checkFinishTip();
 }
 
 /* ---------------- 初始化 ---------------- */
