@@ -1136,6 +1136,10 @@ function loadMoreMood() {
     moodShowCount += 6;
     renderMoodList();
 }
+function collapseMood() {
+    moodShowCount = 6;
+    renderMoodList();
+}
 function renderMoodList() {
     const w = document.getElementById("moodListWrap"); w.innerHTML = "";
     if (!data.moodList || data.moodList.length === 0) { w.innerHTML = '<div style="padding:8px 4px;color:#84747c;font-size:13px;">暂无情绪记录</div>'; return; }
@@ -1153,6 +1157,12 @@ function renderMoodList() {
         more.style.textAlign = "center";
         more.innerHTML = '<button class="btn-more" onclick="loadMoreMood()">📜 查看更早心情（' + (data.moodList.length - moodShowCount) + ' 条）</button>';
         w.appendChild(more);
+    }
+    if (moodShowCount > 6) {
+        const fold = document.createElement("div");
+        fold.style.textAlign = "center";
+        fold.innerHTML = '<button class="btn-more" onclick="collapseMood()">🔼 收起</button>';
+        w.appendChild(fold);
     }
 }
 async function submitShopApply() {
