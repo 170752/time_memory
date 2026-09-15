@@ -458,6 +458,21 @@ function ensureDataFields(d) {
     if (d.recordUnlockedPlus === undefined) d.recordUnlockedPlus = d.recordUnlockedCount > 0 || d.recordViewUnlocked === true;
     if (d.recordUnlockedMinus === undefined) d.recordUnlockedMinus = d.recordUnlockedCount > 0 || d.recordViewUnlocked === true;
     if (d.lastLevel === undefined) d.lastLevel = Math.floor((d.point || 0) / 20) + 1;
+    // 数据迁移：历史已确认完成（finishTaskHistory）但申请记录仍停留在 approved 的，标记为 completed
+    if (Array.isArray(d.finishTaskHistory) && Array.isArray(d.pendingTasks) && d.finishTaskHistory.length > 0) {
+        d.pendingTasks.forEach(p => {
+            if (p.status === "approved") {
+                const hits = d.finishTaskHistory.filter(h =>
+                    (h.requester || "admin") === (p.requester || "admin") && h.text === p.text && (h.note || "") === (p.note || "")
+                );
+                if (hits.length > 0) {
+                    p.status = "completed";
+                    p.getPoint = hits[hits.length - 1].getPoint;
+                    if (!p.handledTime) p.handledTime = hits[hits.length - 1].time;
+                }
+            }
+        });
+    }
     return d;
 }
 ensureDataFields(data);
