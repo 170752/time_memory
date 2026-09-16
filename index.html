@@ -1285,7 +1285,7 @@ async function exchangeGoods(idx) {
     const diff = Math.abs(data.point - total);
     if (diff > MAX_EXCHANGE_DIFF) { alert("❌ 不可兑换！当前积分" + data.point + "，需" + total + "积分。差值" + diff + "，最大允许差值" + MAX_EXCHANGE_DIFF); return; }
     data.point -= total;
-    data.shopRecords.unshift({ goodsName: g.name, cost: total, qty: n, time: new Date().toLocaleString() });
+    data.shopRecords.unshift({ goodsName: g.name, cost: total, qty: n, time: new Date().toLocaleString(), signed: false });
     pushPointHistory("兑换商品" + g.name + "×" + n + "-" + total);
     g.qty = qty - n;
     const removed = g.qty <= 0;
@@ -1324,24 +1324,44 @@ function renderShop() {
         recWrap.innerHTML = '<div style="padding:6px;color:#84747c;font-size:13px;">暂无兑换记录</div>';
     } else {
         data.shopRecords.slice(0, shopRecShowCount).forEach(r => {
-            const div = document.createElement("div"); div.style.fontSize = "13px"; div.style.margin = "4px 0";
-            div.innerText = r.time + "｜兑换：" + r.goodsName + (r.qty && r.qty > 1 ? "×" + r.qty : "") + "，消耗" + r.cost + "积分";
-            const retAll = (data.returnApplies || []).filter(x => x.goodsName === r.goodsName && x.cost === r.cost && x.qty === (r.qty || 1) && x.time === r.time);
-            const ret = retAll[retAll.length - 1];
-            if (ret) {
-                const st = ret.status === "approved" ? '<span style="color:#2f9e6e;">✅ 已退货</span>' :
-                    ret.status === "rejected" ? '<span style="color:#d06060;">❌ 退货被拒' + (ret.reason ? "（" + ret.reason + "）" : "") + '</span>' :
-                    '<span style="color:#e8a33d;">⏳ 退货审批中</span>';
-                div.innerHTML += "　" + st;
-                if (ret.status === "rejected" && loginState.role === "user") {
-                    const rb = document.createElement("button"); rb.className = "btn-orange btn-sm"; rb.innerText = "再次申请退货";
-                    rb.style.marginLeft = "6px"; rb.onclick = () => applyReturn(data.shopRecords.indexOf(r));
+            const div = document.createElement("div");
+            div.style.fontSize = "13px"; div.style.margin = "4px 0";
+            div.style.display = "flex"; div.style.alignItems = "center"; div.style.gap = "8px";
+            const txt = document.createElement("span");
+            txt.style.flex = "1"; txt.style.minWidth = "0";
+            txt.innerText = r.time + "｜兑换：" + r.goodsName + (r.qty && r.qty > 1 ? "×" + r.qty : "") + "，消耗" + r.cost + "积分";
+            div.appendChild(txt);
+            const isUser = loginState.role === "user";
+            const signed = r.signed !== false;
+            if (!signed) {
+                const st = document.createElement("span"); st.style.color = "#e8a33d"; st.style.fontSize = "12px"; st.style.flex = "0 0 auto"; st.innerText = "⏳ 待签收";
+                div.appendChild(st);
+                if (isUser) {
+                    const btn = document.createElement("button"); btn.className = "btn-green btn-sm"; btn.innerText = "确认签收";
+                    btn.onclick = () => confirmSign(data.shopRecords.indexOf(r));
+                    div.appendChild(btn);
+                }
+            } else {
+                const st = document.createElement("span"); st.style.color = "#2f9e6e"; st.style.fontSize = "12px"; st.style.flex = "0 0 auto"; st.innerText = "✅ 已签收";
+                div.appendChild(st);
+                const retAll = (data.returnApplies || []).filter(x => x.goodsName === r.goodsName && x.cost === r.cost && x.qty === (r.qty || 1) && x.time === r.time);
+                const ret = retAll[retAll.length - 1];
+                if (ret) {
+                    const rst = document.createElement("span"); rst.style.fontSize = "12px"; rst.style.flex = "0 0 auto";
+                    if (ret.status === "approved") { rst.style.color = "#2f9e6e"; rst.innerText = "✅ 已退货"; }
+                    else if (ret.status === "rejected") { rst.style.color = "#d06060"; rst.innerText = "❌ 退货被拒" + (ret.reason ? "（" + ret.reason + "）" : ""); }
+                    else { rst.style.color = "#e8a33d"; rst.innerText = "⏳ 退货审批中"; }
+                    div.appendChild(rst);
+                    if (ret.status === "rejected" && isUser) {
+                        const rb = document.createElement("button"); rb.className = "btn-orange btn-sm"; rb.innerText = "再次申请退货";
+                        rb.onclick = () => applyReturn(data.shopRecords.indexOf(r));
+                        div.appendChild(rb);
+                    }
+                } else if (isUser) {
+                    const rb = document.createElement("button"); rb.className = "btn-orange btn-sm"; rb.innerText = "申请退货";
+                    rb.onclick = () => applyReturn(data.shopRecords.indexOf(r));
                     div.appendChild(rb);
                 }
-            } else if (loginState.role === "user") {
-                const rb = document.createElement("button"); rb.className = "btn-orange btn-sm"; rb.innerText = "申请退货";
-                rb.style.marginLeft = "6px"; rb.onclick = () => applyReturn(data.shopRecords.indexOf(r));
-                div.appendChild(rb);
             }
             recWrap.appendChild(div);
         });
@@ -1352,6 +1372,12 @@ function renderShop() {
             recWrap.appendChild(more);
         }
     }
+}
+async function confirmSign(recIdx) {
+    const rec = data.shopRecords[recIdx]; if (!rec || rec.signed === true) return;
+    rec.signed = true;
+    await save(); render();
+    alert("✅ 已确认签收「" + rec.goodsName + "」");
 }
 async function applyReturn(recIdx) {
     const rec = data.shopRecords[recIdx]; if (!rec) return;
