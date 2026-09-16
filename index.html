@@ -844,7 +844,9 @@ async function loadCloudRoomData() {
         const cloudPayload = roomRow.payload;
         if (cloudPayload) {
             if (cloudPayload.data) data = ensureDataFields(cloudPayload.data);
-            if (cloudPayload.pwdConfig) pwdConfig = cloudPayload.pwdConfig;
+            if (cloudPayload.pwdConfig) {
+                pwdConfig = Object.assign({ admin: "123456", user: "654321", secretCode: "iloveyou", nickA: "", nickB: "" }, cloudPayload.pwdConfig);
+            }
         }
         localStorage.setItem("loveTaskData", JSON.stringify(data));
         localStorage.setItem("lovePwdConfig", JSON.stringify(pwdConfig));
@@ -929,10 +931,9 @@ function syncStaticRoleText() {
     const a = nickA || "A伙伴", b = nickB || "B伙伴";
     ["applyHintLabel", "shopTitleLabel", "pendingTitleLabel", "newAdminPwdLabel", "newUserPwdLabel", "unlockRuleTip", "badgeHintLabel"].forEach(id => {
         const el = document.getElementById(id);
-        if (el && !el.dataset.roleSynced) {
-            el.dataset.roleSynced = "1";
-            el.innerHTML = el.innerHTML.replace(/A伙伴/g, a).replace(/B伙伴/g, b);
-        }
+        if (!el) return;
+        if (!el.dataset.rawHtml) el.dataset.rawHtml = el.innerHTML;
+        el.innerHTML = el.dataset.rawHtml.replace(/A伙伴/g, a).replace(/B伙伴/g, b);
     });
 }
 function openNickModal() {
@@ -945,7 +946,6 @@ async function saveNickFromModal() {
     if (loginState.role === "admin") { pwdConfig.nickA = v; }
     else { pwdConfig.nickB = v; }
     localStorage.setItem("lovePwdConfig", JSON.stringify(pwdConfig));
-    document.querySelectorAll("[data-role-synced]").forEach(el => delete el.dataset.roleSynced);
     await save();
     render();
     toggleHide("nickModal");
@@ -1016,7 +1016,7 @@ function renderMyPendingList() {
 function renderAdminPendingList() {
     const w = document.getElementById("adminPendingList"); if (!w) return;
     w.innerHTML = "";
-    const pendingList = (data.pendingTasks || []).filter(x => x.status !== "approved" && x.status !== "rejected");
+    const pendingList = (data.pendingTasks || []).filter(x => x.status !== "approved" && x.status !== "rejected" && x.status !== "completed");
     const handledCount = (data.pendingTasks || []).length - pendingList.length;
     if (pendingList.length === 0) {
         w.innerHTML = '<div style="padding:8px 4px;color:#84747c;font-size:13px;">暂无待审批的任务申请' + (handledCount > 0 ? '（已处理 ' + handledCount + ' 条，见' + getRoleShort("user") + '申请记录）' : '') + '</div>';
@@ -1134,7 +1134,8 @@ async function addMoodRecord() {
     const mt = document.getElementById("moodSelect").value;
     const mn = document.getElementById("moodNote").value.trim();
     const rn = getRoleShort(loginState.role);
-    data.moodList.unshift({ roleKey: loginState.role, role: rn, mood: mt, note: mn, time: new Date().toLocaleString() });
+    const nowTs = Date.now();
+    data.moodList.unshift({ roleKey: loginState.role, role: rn, mood: mt, note: mn, time: new Date(nowTs).toLocaleString(), ts: nowTs });
     await save(); render(); document.getElementById("moodNote").value = "";
 }
 const MOOD_EMOJI = { "平静": "😌", "开心": "😊", "愉悦": "🥰", "兴奋": "🤗", "期待": "🤩", "思念": "💭", "疲惫": "😔", "委屈": "🥺", "烦躁": "😤", "生气": "😠", "低落": "😞" };
@@ -1198,6 +1199,7 @@ async function approveShopApply(idx) {
     a.status = "approved";
     a.handledTime = new Date().toLocaleString();
     data.shopGoods.push({ name: a.text, cost: p, qty: qty, note: a.desc });
+    data.shopAddCount = (data.shopAddCount || 0) + 1;
     await save(); render();
     alert("✅ 已同意上架「" + a.text + "」，所需积分：" + p + "，数量：" + qty);
 }
@@ -1273,6 +1275,7 @@ async function exchangeGoods(idx) {
     if (isReadOnlyMode()) { alert("⚠️ 当前积分过低，仅查看模式，不能兑换商品"); return; }
     const g = data.shopGoods[idx]; if (!g) return;
     const qty = g.qty === undefined ? 1 : (g.qty || 0);
+    if (qty <= 0) { alert("该商品已售罄"); return; }
     let n = 1;
     if (qty > 1) {
         const inp = prompt("【" + g.name + "】剩余 " + qty + " 件，单价 " + g.cost + " 积分\n请输入兑换数量（1~" + qty + "）：", "1");
@@ -1310,10 +1313,11 @@ function renderShop() {
             const canExchange = (diffVal <= MAX_EXCHANGE_DIFF) && (!isReadOnlyMode());
             const diffTip = '<span style="font-size:12px;color:#777">｜积分差值：' + diffVal + '（允许≤' + MAX_EXCHANGE_DIFF + '）</span>';
             const qty = g.qty === undefined ? 1 : (g.qty || 0);
+            const soldOut = qty <= 0;
             const qtyTip = '<span style="font-size:12px;color:#e8a33d;">｜剩余 ' + qty + ' 件</span>';
             let btnHtml = "";
             if (loginState.role === "user") {
-                btnHtml = canExchange ? '<button class="btn-green" onclick="exchangeGoods(' + idx + ')">兑换</button>' : '<button class="btn-green" disabled>不可兑换</button>';
+                btnHtml = (canExchange && !soldOut) ? '<button class="btn-green" onclick="exchangeGoods(' + idx + ')">兑换</button>' : '<button class="btn-green" disabled>' + (soldOut ? "已售罄" : "不可兑换") + '</button>';
             }
             if (loginState.role === "admin") { btnHtml = '<button class="btn-red" onclick="delShopGoods(' + idx + ')">删除</button>'; }
             div.innerHTML = '<div class="shop-info">🎁' + g.name + "｜消耗积分：" + g.cost + diffTip + qtyTip + "</div><div class=\"row\">" + btnHtml + "</div>";
@@ -1490,7 +1494,7 @@ function renderInstantMessages() {
             bubble.classList.add("recalled");
             body.innerText = (isMe ? "你撤回了一条消息" : "对方撤回了一条消息");
         } else if (isMe && m.time) {
-            const age = Date.now() - new Date(m.time).getTime();
+            const age = Date.now() - (m.ts ? m.ts : new Date(m.time).getTime());
             if (!isNaN(age) && age >= 0 && age <= 60000) {
                 const rBtn = document.createElement("button");
                 rBtn.className = "recall-btn";
@@ -1507,7 +1511,7 @@ async function recallMsg(idx) {
     const m = (data.messages || [])[idx];
     if (!m || m.role !== loginState.role) return;
     if (m.recalled) return;
-    const age = Date.now() - new Date(m.time).getTime();
+    const age = Date.now() - (m.ts ? m.ts : new Date(m.time).getTime());
     if (isNaN(age) || age < 0 || age > 60000) { alert("⏱️ 仅可撤回发送 1 分钟内的消息"); return; }
     m.recalled = true; m.text = "";
     await save(); render();
@@ -1518,7 +1522,8 @@ async function sendInstantMsg() {
     const txt = (input.value || "").trim();
     if (!txt) return;
     const roleName = getRoleName(loginState.role);
-    const msg = { role: loginState.role, roleName: roleName, text: txt, time: new Date().toLocaleString() };
+    const nowTs = Date.now();
+    const msg = { role: loginState.role, roleName: roleName, text: txt, time: new Date(nowTs).toLocaleString(), ts: nowTs };
     if (!data.messages) data.messages = [];
     data.messages.push(msg);
     if (!data.msgReadPos || typeof data.msgReadPos !== "object") data.msgReadPos = {};
@@ -1527,7 +1532,7 @@ async function sendInstantMsg() {
     data.sendCount[loginState.role] = (data.sendCount[loginState.role] || 0) + 1;
     const latestMood = data.moodList && data.moodList[0];
     if (latestMood && latestMood.mood && /低落|烦躁/.test(latestMood.mood) && latestMood.role !== roleName &&
-        (Date.now() - new Date(latestMood.time).getTime()) < 7 * 86400000) {
+        (Date.now() - (latestMood.ts ? latestMood.ts : new Date(latestMood.time).getTime())) < 7 * 86400000) {
         if (!data.careCount || typeof data.careCount !== "object") data.careCount = { admin: 0, user: 0 };
         data.careCount[loginState.role] = (data.careCount[loginState.role] || 0) + 1;
     }
@@ -2138,7 +2143,9 @@ function countMsgsInHours(hStart, hEnd) {
     let c = 0;
     data.messages.forEach(m => {
         if (m.role !== loginState.role || !m.time) return;
-        const h = new Date(m.time).getHours();
+        const t = m.ts ? new Date(m.ts) : new Date(m.time);
+        if (isNaN(t.getTime())) return;
+        const h = t.getHours();
         if (h >= hStart && h < hEnd) c++;
     });
     return c;
