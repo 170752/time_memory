@@ -1338,31 +1338,34 @@ function renderShop() {
             if (signed || isLegacy) {
                 const st = document.createElement("span"); st.style.color = "#2f9e6e"; st.style.fontSize = "12px"; st.style.flex = "0 0 auto"; st.innerText = "✅ 已签收";
                 div.appendChild(st);
-                const retAll = (data.returnApplies || []).filter(x => x.goodsName === r.goodsName && x.cost === r.cost && x.qty === (r.qty || 1) && x.time === r.time);
-                const ret = retAll[retAll.length - 1];
-                if (ret) {
-                    const rst = document.createElement("span"); rst.style.fontSize = "12px"; rst.style.flex = "0 0 auto";
-                    if (ret.status === "approved") { rst.style.color = "#2f9e6e"; rst.innerText = "✅ 已退货"; }
-                    else if (ret.status === "rejected") { rst.style.color = "#d06060"; rst.innerText = "❌ 退货被拒" + (ret.reason ? "（" + ret.reason + "）" : ""); }
-                    else { rst.style.color = "#e8a33d"; rst.innerText = "⏳ 退货审批中"; }
-                    div.appendChild(rst);
-                    if (ret.status === "rejected" && isUser) {
-                        const rb = document.createElement("button"); rb.className = "btn-orange btn-sm"; rb.innerText = "再次申请退货";
-                        rb.onclick = () => applyReturn(data.shopRecords.indexOf(r));
-                        div.appendChild(rb);
-                    }
-                } else if (isUser) {
-                    const rb = document.createElement("button"); rb.className = "btn-orange btn-sm"; rb.innerText = "申请退货";
-                    rb.onclick = () => applyReturn(data.shopRecords.indexOf(r));
-                    div.appendChild(rb);
-                }
             } else if (shipped) {
                 const st = document.createElement("span"); st.style.color = "#2f9e6e"; st.style.fontSize = "12px"; st.style.flex = "0 0 auto"; st.innerText = "🚚 已发货";
                 div.appendChild(st);
                 if (isUser) {
-                    const btn = document.createElement("button"); btn.className = "btn-green btn-sm"; btn.innerText = "确认签收";
-                    btn.onclick = () => confirmSign(data.shopRecords.indexOf(r));
-                    div.appendChild(btn);
+                    const retAll = (data.returnApplies || []).filter(x => x.goodsName === r.goodsName && x.cost === r.cost && x.qty === (r.qty || 1) && x.time === r.time);
+                    const ret = retAll[retAll.length - 1];
+                    if (ret) {
+                        const rst = document.createElement("span"); rst.style.fontSize = "12px"; rst.style.flex = "0 0 auto";
+                        if (ret.status === "approved") { rst.style.color = "#2f9e6e"; rst.innerText = "✅ 已退货"; }
+                        else if (ret.status === "rejected") { rst.style.color = "#d06060"; rst.innerText = "❌ 退货被拒" + (ret.reason ? "（" + ret.reason + "）" : ""); }
+                        else { rst.style.color = "#e8a33d"; rst.innerText = "⏳ 退货审批中"; }
+                        div.appendChild(rst);
+                        if (ret.status === "rejected") {
+                            const rb = document.createElement("button"); rb.className = "btn-orange btn-sm"; rb.innerText = "再次申请退货";
+                            rb.onclick = () => applyReturn(data.shopRecords.indexOf(r));
+                            div.appendChild(rb);
+                            const btn = document.createElement("button"); btn.className = "btn-green btn-sm"; btn.innerText = "确认签收";
+                            btn.onclick = () => confirmSign(data.shopRecords.indexOf(r));
+                            div.appendChild(btn);
+                        }
+                    } else {
+                        const rb = document.createElement("button"); rb.className = "btn-orange btn-sm"; rb.innerText = "申请退货";
+                        rb.onclick = () => applyReturn(data.shopRecords.indexOf(r));
+                        div.appendChild(rb);
+                        const btn = document.createElement("button"); btn.className = "btn-green btn-sm"; btn.innerText = "确认签收";
+                        btn.onclick = () => confirmSign(data.shopRecords.indexOf(r));
+                        div.appendChild(btn);
+                    }
                 }
             } else {
                 const st = document.createElement("span"); st.style.color = "#e8a33d"; st.style.fontSize = "12px"; st.style.flex = "0 0 auto"; st.innerText = "⏳ 待发货";
