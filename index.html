@@ -1214,6 +1214,16 @@ async function rejectShopApply(idx) {
     await save(); render();
     alert(a.rejectReason ? "已驳回，理由已告知申请人" : "已驳回该上架申请");
 }
+async function cancelShopApply(idx) {
+    const a = data.shopApplies[idx]; if (!a) return;
+    if (a.requester !== loginState.role) return;
+    if (a.status !== "pending") { alert("该申请已处理过了，无法撤销"); return; }
+    if (!confirm("🗑️ 确认撤销上架申请「" + a.text + "」？")) return;
+    a.status = "cancelled";
+    a.handledTime = new Date().toLocaleString();
+    await save(); render();
+    alert("✅ 已撤销该上架申请，对方不再收到审批提示");
+}
 let shopApplyShowCount = 6;
 function loadMoreShopApply() { shopApplyShowCount += 6; renderShopApply(); }
 function renderShopApply() {
@@ -1248,10 +1258,15 @@ function renderShopApply() {
             mine.slice(0, shopApplyShowCount).forEach(a => {
                 const st = a.status === "approved" ? '<span style="color:#2f9e6e;">✅ 已上架（' + a.price + '分）</span>' :
                     a.status === "rejected" ? '<span style="color:#d06060;">❌ 已驳回' + (a.rejectReason ? "：" + a.rejectReason : "") + '</span>' :
+                    a.status === "cancelled" ? '<span style="color:#8a7f88;">↩️ 已撤销</span>' :
                     '<span style="color:#e8a33d;">⏳ 审批中</span>';
                 const div = document.createElement("div"); div.className = "item-card";
+                let cancelBtn = "";
+                if (a.status === "pending" && a.requester === loginState.role) {
+                    cancelBtn = '<div class="row" style="justify-content:flex-end;margin:6px 0 0;"><button class="btn-exit btn-sm" onclick="cancelShopApply(' + data.shopApplies.indexOf(a) + ')">↩️ 撤销申请</button></div>';
+                }
                 div.innerHTML = '<div class="msg-title">🛒 ' + a.text + '</div>' + st +
-                    '<div style="color:#94848c;font-size:12px;">申请时间：' + a.time + (a.handledTime ? "　处理时间：" + a.handledTime : "") + '</div>';
+                    '<div style="color:#94848c;font-size:12px;">申请时间：' + a.time + (a.handledTime ? "　处理时间：" + a.handledTime : "") + '</div>' + cancelBtn;
                 mw.appendChild(div);
             });
             if (mine.length > shopApplyShowCount) {
