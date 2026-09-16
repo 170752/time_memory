@@ -243,6 +243,7 @@ body.dark .top-bar,body.dark .level-up-text{color:#c4afbe;}
 <div class="btn-row"><button class="btn-purple" onclick="addShopGoods()">➕ 添加商品</button></div>
 </div>
 <div id="shopApplyPendingWrap" class="hide"></div>
+<div id="shopReturnPendingWrap" class="hide"></div>
 <div id="shopApplyFormArea" class="hide">
 <h4 style="margin-top:12px;">🛒 申请上架商品</h4>
 <div class="field"><input type="text" id="shopApplyName" class="grow" placeholder="想兑换的物品名称"></div>
@@ -461,6 +462,7 @@ function ensureDataFields(d) {
     if (!d.moodList) d.moodList = [];
     if (!d.shopGoods) d.shopGoods = [];
     if (!d.shopApplies) d.shopApplies = [];
+    if (!d.returnApplies) d.returnApplies = [];
     if (Array.isArray(d.shopGoods)) d.shopGoods.forEach(g => { if (g.qty === undefined) g.qty = 1; });
     if (!d.shopRecords) d.shopRecords = [];
     if (!d.messages) d.messages = [];
@@ -1296,6 +1298,7 @@ function renderShop() {
     const adminShopArea = document.getElementById("shopAdminArea");
     const shopWrap = document.getElementById("shopListWrap");
     const recWrap = document.getElementById("shopRecordWrap");
+    renderShopReturnPending();
     shopWrap.innerHTML = ""; recWrap.innerHTML = "";
     loginState.role === "admin" ? adminShopArea.classList.remove("hide") : adminShopArea.classList.add("hide");
     if (!data.shopGoods || data.shopGoods.length === 0) {
@@ -1323,6 +1326,23 @@ function renderShop() {
         data.shopRecords.slice(0, shopRecShowCount).forEach(r => {
             const div = document.createElement("div"); div.style.fontSize = "13px"; div.style.margin = "4px 0";
             div.innerText = r.time + "｜兑换：" + r.goodsName + (r.qty && r.qty > 1 ? "×" + r.qty : "") + "，消耗" + r.cost + "积分";
+            const retAll = (data.returnApplies || []).filter(x => x.goodsName === r.goodsName && x.cost === r.cost && x.qty === (r.qty || 1) && x.time === r.time);
+            const ret = retAll[retAll.length - 1];
+            if (ret) {
+                const st = ret.status === "approved" ? '<span style="color:#2f9e6e;">✅ 已退货</span>' :
+                    ret.status === "rejected" ? '<span style="color:#d06060;">❌ 退货被拒' + (ret.reason ? "（" + ret.reason + "）" : "") + '</span>' :
+                    '<span style="color:#e8a33d;">⏳ 退货审批中</span>';
+                div.innerHTML += "　" + st;
+                if (ret.status === "rejected" && loginState.role === "user") {
+                    const rb = document.createElement("button"); rb.className = "btn-orange btn-sm"; rb.innerText = "再次申请退货";
+                    rb.style.marginLeft = "6px"; rb.onclick = () => applyReturn(data.shopRecords.indexOf(r));
+                    div.appendChild(rb);
+                }
+            } else if (loginState.role === "user") {
+                const rb = document.createElement("button"); rb.className = "btn-orange btn-sm"; rb.innerText = "申请退货";
+                rb.style.marginLeft = "6px"; rb.onclick = () => applyReturn(data.shopRecords.indexOf(r));
+                div.appendChild(rb);
+            }
             recWrap.appendChild(div);
         });
         if (data.shopRecords.length > shopRecShowCount) {
@@ -1331,6 +1351,58 @@ function renderShop() {
             more.innerHTML = '<button class="btn-more" onclick="loadMoreShopRec()">📜 查看更早兑换（' + (data.shopRecords.length - shopRecShowCount) + ' 条）</button>';
             recWrap.appendChild(more);
         }
+    }
+}
+async function applyReturn(recIdx) {
+    const rec = data.shopRecords[recIdx]; if (!rec) return;
+    if ((data.returnApplies || []).some(x => x.status !== "rejected" && x.goodsName === rec.goodsName && x.cost === rec.cost && x.qty === (rec.qty || 1) && x.time === rec.time)) {
+        alert("该笔兑换已有退货申请在处理中"); return;
+    }
+    const note = prompt("填写退货原因（可选）：", "");
+    if (note === null) return;
+    data.returnApplies.push({ goodsName: rec.goodsName, cost: rec.cost, qty: rec.qty || 1, total: rec.cost, time: rec.time, reqTime: new Date().toLocaleString(), status: "pending", requester: loginState.role, note: note.trim() });
+    await save(); render();
+    alert("✅ 退货申请已提交，等待" + getRoleShort("admin") + "确认");
+}
+async function confirmReturn(retIdx) {
+    const r = data.returnApplies[retIdx]; if (!r || r.status !== "pending") return;
+    data.point += r.total;
+    pushPointHistory("退货退款：" + r.goodsName + "×" + r.qty + "+" + r.total);
+    const g = (data.shopGoods || []).find(x => x.name === r.goodsName);
+    if (g) g.qty = (g.qty === undefined ? 1 : (g.qty || 0)) + r.qty;
+    else data.shopGoods.push({ name: r.goodsName, cost: r.cost, qty: r.qty });
+    r.status = "approved"; r.handledTime = new Date().toLocaleString();
+    await save(); render();
+    alert("✅ 已同意退货，「" + r.goodsName + "」已重新上架，积分已退还");
+}
+async function rejectReturn(retIdx) {
+    const r = data.returnApplies[retIdx]; if (!r || r.status !== "pending") return;
+    const reason = document.getElementById("rejectReturnReason_" + retIdx).value.trim();
+    r.status = "rejected"; r.reason = reason; r.handledTime = new Date().toLocaleString();
+    await save(); render();
+    alert(reason ? "已拒绝退货，理由已告知申请人" : "已拒绝该退货申请");
+}
+function renderShopReturnPending() {
+    const pw = document.getElementById("shopReturnPendingWrap");
+    if (!pw) return;
+    pw.innerHTML = "";
+    if (loginState.role !== "admin") { pw.classList.add("hide"); return; }
+    const pending = (data.returnApplies || []).filter(x => x.status === "pending");
+    pw.classList.remove("hide");
+    if (pending.length === 0) {
+        pw.innerHTML = '<h4 style="margin-top:12px;">📦 退货申请</h4><div style="padding:8px 4px;color:#84747c;font-size:13px;">暂无待处理的退货申请</div>';
+    } else {
+        let html = '<h4 style="margin-top:12px;">📦 退货申请（' + pending.length + '）</h4>';
+        pending.forEach(a => {
+            const idx = data.returnApplies.indexOf(a);
+            html += '<div class="item-card"><div class="msg-title">📦 ' + a.goodsName + (a.qty > 1 ? "×" + a.qty : "") + ' 退货申请</div>' +
+                '<div>兑换消耗：' + a.total + ' 积分　申请人：' + getRoleName("user") + '</div>' +
+                (a.note ? '<div class="item-note">📝 退货原因：' + a.note + '</div>' : "") +
+                '<div style="color:#94848c;font-size:12px;">兑换时间：' + a.time + '</div>' +
+                '<div class="row"><button class="btn-green" style="flex:1 1 0;" onclick="confirmReturn(' + idx + ')">✅ 同意退货</button><button class="btn-red" style="flex:1 1 0;" onclick="toggleHide(\'rejectReturnBox_' + idx + '\')">❌ 不同意</button></div>' +
+                '<div id="rejectReturnBox_' + idx + '" class="hide"><div class="row"><input type="text" id="rejectReturnReason_' + idx + '" class="grow" placeholder="拒绝理由（可选）"><button class="btn-red" onclick="rejectReturn(' + idx + ')">确认拒绝</button></div></div></div>';
+        });
+        pw.innerHTML = html;
     }
 }
 let chatShowCount = 6;
