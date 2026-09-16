@@ -1285,7 +1285,7 @@ async function exchangeGoods(idx) {
     const diff = Math.abs(data.point - total);
     if (diff > MAX_EXCHANGE_DIFF) { alert("❌ 不可兑换！当前积分" + data.point + "，需" + total + "积分。差值" + diff + "，最大允许差值" + MAX_EXCHANGE_DIFF); return; }
     data.point -= total;
-    data.shopRecords.unshift({ goodsName: g.name, cost: total, qty: n, time: new Date().toLocaleString(), signed: false });
+    data.shopRecords.unshift({ goodsName: g.name, cost: total, qty: n, time: new Date().toLocaleString(), signed: false, shipped: false });
     pushPointHistory("兑换商品" + g.name + "×" + n + "-" + total);
     g.qty = qty - n;
     const removed = g.qty <= 0;
@@ -1332,16 +1332,10 @@ function renderShop() {
             txt.innerText = r.time + "｜兑换：" + r.goodsName + (r.qty && r.qty > 1 ? "×" + r.qty : "") + "，消耗" + r.cost + "积分";
             div.appendChild(txt);
             const isUser = loginState.role === "user";
-            const signed = r.signed !== false;
-            if (!signed) {
-                const st = document.createElement("span"); st.style.color = "#e8a33d"; st.style.fontSize = "12px"; st.style.flex = "0 0 auto"; st.innerText = "⏳ 待签收";
-                div.appendChild(st);
-                if (isUser) {
-                    const btn = document.createElement("button"); btn.className = "btn-green btn-sm"; btn.innerText = "确认签收";
-                    btn.onclick = () => confirmSign(data.shopRecords.indexOf(r));
-                    div.appendChild(btn);
-                }
-            } else {
+            const shipped = r.shipped === true;
+            const signed = r.signed === true;
+            const isLegacy = r.shipped === undefined && r.signed === undefined;
+            if (signed || isLegacy) {
                 const st = document.createElement("span"); st.style.color = "#2f9e6e"; st.style.fontSize = "12px"; st.style.flex = "0 0 auto"; st.innerText = "✅ 已签收";
                 div.appendChild(st);
                 const retAll = (data.returnApplies || []).filter(x => x.goodsName === r.goodsName && x.cost === r.cost && x.qty === (r.qty || 1) && x.time === r.time);
@@ -1362,6 +1356,22 @@ function renderShop() {
                     rb.onclick = () => applyReturn(data.shopRecords.indexOf(r));
                     div.appendChild(rb);
                 }
+            } else if (shipped) {
+                const st = document.createElement("span"); st.style.color = "#2f9e6e"; st.style.fontSize = "12px"; st.style.flex = "0 0 auto"; st.innerText = "🚚 已发货";
+                div.appendChild(st);
+                if (isUser) {
+                    const btn = document.createElement("button"); btn.className = "btn-green btn-sm"; btn.innerText = "确认签收";
+                    btn.onclick = () => confirmSign(data.shopRecords.indexOf(r));
+                    div.appendChild(btn);
+                }
+            } else {
+                const st = document.createElement("span"); st.style.color = "#e8a33d"; st.style.fontSize = "12px"; st.style.flex = "0 0 auto"; st.innerText = "⏳ 待发货";
+                div.appendChild(st);
+                if (!isUser) {
+                    const btn = document.createElement("button"); btn.className = "btn-blue btn-sm"; btn.innerText = "确认发货";
+                    btn.onclick = () => confirmShip(data.shopRecords.indexOf(r));
+                    div.appendChild(btn);
+                }
             }
             recWrap.appendChild(div);
         });
@@ -1372,6 +1382,12 @@ function renderShop() {
             recWrap.appendChild(more);
         }
     }
+}
+async function confirmShip(recIdx) {
+    const rec = data.shopRecords[recIdx]; if (!rec || rec.shipped === true || rec.signed === true) return;
+    rec.shipped = true;
+    await save(); render();
+    alert("✅ 已确认发货「" + rec.goodsName + "」");
 }
 async function confirmSign(recIdx) {
     const rec = data.shopRecords[recIdx]; if (!rec || rec.signed === true) return;
