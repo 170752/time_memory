@@ -1840,12 +1840,13 @@ function hasTodoItems() {
     const undone = data.msgList || [];
     const taskPending = (data.pendingTasks || []).filter(x => x.status === "pending");
     const shopPending = (data.shopApplies || []).filter(x => x.status === "pending");
+    const returnPending = (data.returnApplies || []).filter(x => x.status === "pending");
+    const shipPending = (data.shopRecords || []).filter(r => r.shipped === false && r.signed !== true);
+    const signPending = (data.shopRecords || []).filter(r => r.shipped === true && r.signed !== true);
     const confirmPending = data.waitConfirmTasks || [];
-    const myPending = (data.pendingTasks || []).filter(x => x.requester === loginState.role && x.status === "pending").length;
-    const myShop = (data.shopApplies || []).filter(x => x.requester === loginState.role && x.status === "pending").length;
     return loginState.role === "admin"
-        ? (confirmPending.length > 0 || taskPending.length > 0 || shopPending.length > 0)
-        : (undone.length > 0);
+        ? (confirmPending.length > 0 || taskPending.length > 0 || shopPending.length > 0 || returnPending.length > 0 || shipPending.length > 0)
+        : (undone.length > 0 || signPending.length > 0);
 }
 function showLoginSummary() { showGreetingSummary(); }
 function closeGreetingAndCheck() {
@@ -1860,6 +1861,9 @@ function showTodoSummary() {
     document.getElementById("loginSummaryTitle").innerText = "📋 今日备忘";
     document.getElementById("loginSummaryCloseBtn").setAttribute("onclick", "closeLoginSummary()");
     let html = "";
+    const returnPending = (data.returnApplies || []).filter(x => x.status === "pending");
+    const shipPending = (data.shopRecords || []).filter(r => r.shipped === false && r.signed !== true);
+    const signPending = (data.shopRecords || []).filter(r => r.shipped === true && r.signed !== true);
     if (loginState.role === "user") {
         if (undone.length > 0) {
             html += '<div>📋 未完成任务（<b>' + undone.length + '</b>）：<span style="cursor:pointer;color:#a86b94;font-size:13px;" onclick="gotoSection(\'msgList\')">→ 前往</span></div>';
@@ -1867,6 +1871,9 @@ function showTodoSummary() {
                 html += '<div style="padding:2px 0 2px 12px;border-left:3px solid #e8c8dd;margin:4px 0;">• ' + m.text + '</div>';
             });
             if (undone.length > 5) html += '<div style="color:#94848c;font-size:12px;">… 等共 ' + undone.length + ' 条</div>';
+        }
+        if (signPending.length > 0) {
+            html += '<div style="margin-top:10px;">📦 待签收商品：<b>' + signPending.length + '</b>' + ' <span style="cursor:pointer;color:#a86b94;font-size:13px;" onclick="gotoSection(\'shopRecordWrap\')">→ 前往</span></div>';
         }
     }
     if (loginState.role === "admin") {
@@ -1882,6 +1889,12 @@ function showTodoSummary() {
         }
         if (shopPending.length > 0) {
             html += '<div style="margin-top:4px;">🛒 待审核上架申请：<b>' + shopPending.length + '</b>' + ' <span style="cursor:pointer;color:#a86b94;font-size:13px;" onclick="gotoSection(\'shopApplyPendingWrap\')">→ 前往</span></div>';
+        }
+        if (returnPending.length > 0) {
+            html += '<div style="margin-top:4px;">🔙 待处理退货申请：<b>' + returnPending.length + '</b>' + ' <span style="cursor:pointer;color:#a86b94;font-size:13px;" onclick="gotoSection(\'shopReturnPendingWrap\')">→ 前往</span></div>';
+        }
+        if (shipPending.length > 0) {
+            html += '<div style="margin-top:4px;">📦 待发货商品：<b>' + shipPending.length + '</b>' + ' <span style="cursor:pointer;color:#a86b94;font-size:13px;" onclick="gotoSection(\'shopRecordWrap\')">→ 前往</span></div>';
         }
     }
     document.getElementById("loginSummaryBody").innerHTML = html;
