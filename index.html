@@ -503,8 +503,13 @@ function ensureDataFields(d) {
     return d;
 }
 ensureDataFields(data);
+function isNightTime() {
+    const h = new Date().getHours();
+    return h < 6 || h >= 18;
+}
 function applyTheme() {
-    const dark = localStorage.getItem("loveTheme") === "dark";
+    const manual = localStorage.getItem("loveTheme");
+    const dark = manual === "dark" || (!manual && isNightTime());
     document.body.classList.toggle("dark", dark);
     const b = document.getElementById("themeToggle");
     if (b) b.innerText = dark ? "☀️" : "🌙";
@@ -513,6 +518,12 @@ function toggleTheme() {
     localStorage.setItem("loveTheme", document.body.classList.contains("dark") ? "light" : "dark");
     applyTheme();
 }
+function restoreAutoTheme() {
+    localStorage.removeItem("loveTheme");
+    applyTheme();
+    alert("已恢复自动模式：白天浅色（6-18点），夜晚深色");
+}
+setInterval(() => { if (!localStorage.getItem("loveTheme")) applyTheme(); }, 5 * 60 * 1000);
 applyTheme();
 let loginState = JSON.parse(sessionStorage.getItem("loveLoginState")) || { isLogin: false, role: "" };
 let chartFilter = "all";
@@ -2272,6 +2283,6 @@ window.addEventListener("load", function () {
     }
 });
 </script>
-<button id="themeToggle" onclick="toggleTheme()" title="切换深浅色" style="position:fixed;bottom:18px;right:18px;z-index:999;width:46px;height:46px;border-radius:50%;font-size:20px;background:var(--grad-main);box-shadow:0 6px 18px rgba(168,107,148,.35);border:2px solid rgba(255,255,255,.5);">🌙</button>
+<button id="themeToggle" onclick="toggleTheme()" ondblclick="restoreAutoTheme()" title="点击手动切换深浅色｜双击恢复自动（白天浅色/夜晚深色）" style="position:fixed;bottom:18px;right:18px;z-index:999;width:46px;height:46px;border-radius:50%;font-size:20px;background:var(--grad-main);box-shadow:0 6px 18px rgba(168,107,148,.35);border:2px solid rgba(255,255,255,.5);">🌙</button>
 </body>
 </html>
