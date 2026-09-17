@@ -147,7 +147,7 @@ button:disabled{background:#bbb !important;box-shadow:none;cursor:not-allowed;op
     .top-bar{font-size:12px;}
 }
 /* ===== 深色主题 ===== */
-body.dark{--primary:#c9a0bc;--primary-dark:#e5bcd8;--primary-deep:#f0c9e3;--primary-soft:#2a2030;--card-bg:#2a2130;--card-soft:#332838;--text-main:#e9d9e4;--text-sub:#c4afbe;--text-light:#a793a3;--border:#4b3b52;--border-dash:#56425e;--danger:#f07a8a;--success:#6fc99a;--grad-main:linear-gradient(135deg,#b988c0,#a86b94 55%,#8f5a8c);--grad-soft:linear-gradient(160deg,#2a2030,#241b29);--grad-card:linear-gradient(180deg,#2d2333,#272030);--shadow-card:0 10px 32px rgba(0,0,0,.4),0 2px 8px rgba(0,0,0,.25);--shadow-item:0 4px 14px rgba(0,0,0,.3);--shadow-pop:0 20px 50px rgba(0,0,0,.55);}
+body.dark{--primary:#d9a8c8;--primary-dark:#f0d0e4;--primary-deep:#f5d9ea;--primary-soft:#2a2030;--card-bg:#2a2130;--card-soft:#332838;--text-main:#f2e7ee;--text-sub:#d8c2d2;--text-light:#c6b0c0;--border:#4b3b52;--border-dash:#56425e;--danger:#ff8da0;--success:#7fd9ae;--grad-main:linear-gradient(135deg,#c898c8,#b0789e 55%,#9a6a94);--grad-soft:linear-gradient(160deg,#2a2030,#241b29);--grad-card:linear-gradient(180deg,#2d2333,#272030);--shadow-card:0 10px 32px rgba(0,0,0,.4),0 2px 8px rgba(0,0,0,.25);--shadow-item:0 4px 14px rgba(0,0,0,.3);--shadow-pop:0 20px 50px rgba(0,0,0,.55);}
 body.dark{background:linear-gradient(160deg,#241c2a 0%,#1e1723 45%,#241c2a 100%);}
 body.dark::before{background:radial-gradient(closest-side,rgba(150,100,160,.18),transparent);}
 body.dark .container{border-color:rgba(95,70,105,.6);}
@@ -157,10 +157,45 @@ body.dark .mood-item,body.dark .shop-item{background:linear-gradient(160deg,#332
 body.dark .record-item{background:var(--primary-soft);}
 body.dark .msg-list{background:linear-gradient(180deg,#2a2130,#272030);border-color:var(--border);}
 body.dark .chat-bubble.other{background:#3a2d42;border-color:var(--border);color:var(--text-main);}
-body.dark .chat-bubble.recalled{background:#352c3c;color:#a793a3;}
-body.dark .chat-head{color:#c4afbe;}
+body.dark .chat-bubble.recalled{background:#352c3c;color:#c6b0c0;}
+body.dark .chat-head{color:#d8c2d2;}
 body.dark .chat-bubble.me .chat-head{color:#f0d6e6;}
-body.dark .top-bar,body.dark .level-up-text{color:#c4afbe;}
+body.dark .top-bar,body.dark .level-up-text{color:#d8c2d2;}
+body.dark h4{color:#dcc6d6;}
+body.dark .item-note{color:#c6b0c0;}
+body.dark .status-tip{color:#d8c2d2;}
+body.dark .msg-title{color:#f2e7ee;}
+body.dark .online-badge.offline{background:#3a2d42;color:#cbb4c6;}
+body.dark .online-badge.online{background:#244233;color:#7fe6b2;}
+body.dark input::placeholder,body.dark textarea::placeholder{color:#a18a9c;}
+body.dark .secret-item{color:#e6d8e4;}
+body.dark .secret-head{color:#c6b0c0;}
+/* 深色下内联暗色文字提亮 */
+body.dark [style*="#94848c"]{color:#cbb4c6!important;}
+body.dark [style*="#84747c"]{color:#c5afc1!important;}
+body.dark [style*="#7c6c74"]{color:#c1abbc!important;}
+body.dark [style*="#5c4b55"]{color:#f0e2f2!important;}
+body.dark [style*="#6b5563"]{color:#dbc4d6!important;}
+body.dark [style*="#9a8a92"]{color:#cfb8ca!important;}
+body.dark [style*="#8a7f88"]{color:#cbb4c6!important;}
+body.dark [style*="#7d4a68"]{color:#f1d0e6!important;}
+body.dark [style*="#55444e"]{color:#e9d9e6!important;}
+body.dark [style*="#706068"]{color:#d2bcca!important;}
+body.dark [style*="#a86b94"]{color:#e8b4d0!important;}
+body.dark [style*="#7c5fb0"]{color:#c9adea!important;}
+body.dark [style*="#a474bd"]{color:#e4baf2!important;}
+body.dark [style*="#8a5a78"]{color:#e8bcd6!important;}
+/* 状态色提亮 */
+body.dark [style*="#2d8a56"]{color:#66e4a8!important;}
+body.dark [style*="#2f9e6e"]{color:#66e4a8!important;}
+body.dark [style*="#5ab482"]{color:#66e4a8!important;}
+body.dark [style*="#b73b4f"]{color:#ff8798!important;}
+body.dark [style*="#d06060"]{color:#ff8798!important;}
+body.dark [style*="#c03c4c"]{color:#ff8798!important;}
+body.dark [style*="#c2602b"]{color:#ffb066!important;}
+body.dark [style*="#e8a33d"]{color:#ffc26e!important;}
+body.dark [style*="#c48744"]{color:#ffc26e!important;}
+body.dark [style*="#6347a2"]{color:#d0b6f0!important;}
 </style>
 </head>
 <body>
@@ -1372,19 +1407,19 @@ function renderShop() {
             const signed = r.signed === true;
             const isLegacy = r.shipped === undefined && r.signed === undefined;
             if (signed || isLegacy) {
-                const st = document.createElement("span"); st.style.color = "#2f9e6e"; st.style.fontSize = "12px"; st.style.flex = "0 0 auto"; st.innerText = "✅ 已签收";
+                const st = document.createElement("span"); st.setAttribute("style", "color:#2f9e6e;font-size:12px;flex:0 0 auto;"); st.innerText = "✅ 已签收";
                 div.appendChild(st);
             } else if (shipped) {
-                const st = document.createElement("span"); st.style.color = "#2f9e6e"; st.style.fontSize = "12px"; st.style.flex = "0 0 auto"; st.innerText = "🚚 已发货";
+                const st = document.createElement("span"); st.setAttribute("style", "color:#2f9e6e;font-size:12px;flex:0 0 auto;"); st.innerText = "🚚 已发货";
                 div.appendChild(st);
                 if (isUser) {
                     const retAll = (data.returnApplies || []).filter(x => x.goodsName === r.goodsName && x.cost === r.cost && x.qty === (r.qty || 1) && x.time === r.time);
                     const ret = retAll[retAll.length - 1];
                     if (ret) {
-                        const rst = document.createElement("span"); rst.style.fontSize = "12px"; rst.style.flex = "0 0 auto";
-                        if (ret.status === "approved") { rst.style.color = "#2f9e6e"; rst.innerText = "✅ 已退货"; }
-                        else if (ret.status === "rejected") { rst.style.color = "#d06060"; rst.innerText = "❌ 退货被拒" + (ret.reason ? "（" + ret.reason + "）" : ""); }
-                        else { rst.style.color = "#e8a33d"; rst.innerText = "⏳ 退货审批中"; }
+                        const rst = document.createElement("span"); rst.setAttribute("style", "font-size:12px;flex:0 0 auto;");
+                        if (ret.status === "approved") { rst.setAttribute("style", "color:#2f9e6e;font-size:12px;flex:0 0 auto;"); rst.innerText = "✅ 已退货"; }
+                        else if (ret.status === "rejected") { rst.setAttribute("style", "color:#d06060;font-size:12px;flex:0 0 auto;"); rst.innerText = "❌ 退货被拒" + (ret.reason ? "（" + ret.reason + "）" : ""); }
+                        else { rst.setAttribute("style", "color:#e8a33d;font-size:12px;flex:0 0 auto;"); rst.innerText = "⏳ 退货审批中"; }
                         div.appendChild(rst);
                         if (ret.status === "rejected") {
                             const rb = document.createElement("button"); rb.className = "btn-orange btn-sm"; rb.innerText = "再次申请退货";
@@ -1404,7 +1439,7 @@ function renderShop() {
                     }
                 }
             } else {
-                const st = document.createElement("span"); st.style.color = "#e8a33d"; st.style.fontSize = "12px"; st.style.flex = "0 0 auto"; st.innerText = "⏳ 待发货";
+                const st = document.createElement("span"); st.setAttribute("style", "color:#e8a33d;font-size:12px;flex:0 0 auto;"); st.innerText = "⏳ 待发货";
                 div.appendChild(st);
                 if (!isUser) {
                     const btn = document.createElement("button"); btn.className = "btn-blue btn-sm"; btn.innerText = "确认发货";
