@@ -984,6 +984,16 @@ async function rejectPendingTask(idx) {
     await save(); render();
     alert(t.rejectReason ? "已拒绝，理由已告知申请人" : "已拒绝该任务申请");
 }
+async function cancelPendingTask(idx) {
+    const t = data.pendingTasks[idx]; if (!t) return;
+    if (t.requester !== loginState.role) return;
+    if (t.status !== "pending") { alert("该申请已处理过了，无法撤销"); return; }
+    if (!confirm("🗑️ 确认撤销申请「" + t.text + "」？")) return;
+    t.status = "cancelled";
+    t.handledTime = new Date().toLocaleString();
+    await save(); render();
+    alert("✅ 已撤销该申请，对方不再收到审批提示");
+}
 let applyShowCount = 6;
 function loadMoreApply() {
     applyShowCount += 6;
@@ -1000,10 +1010,15 @@ function renderMyPendingList() {
         if (t.status === "approved") statusHtml = '<div style="color:#2d8a56;font-size:13px;">✅ 已同意 · 任务积分：' + t.basePoint + ' · 已进入待兑现清单</div>';
         else if (t.status === "completed") statusHtml = '<div style="color:#2d8a56;font-size:13px;">✅ 已完成 · 获得 ' + (t.getPoint !== undefined ? t.getPoint : t.basePoint) + ' 积分</div>';
         else if (t.status === "rejected") statusHtml = '<div style="color:#b73b4f;font-size:13px;">❌ 已拒绝' + (t.rejectReason ? '｜理由：' + t.rejectReason : '') + '</div>';
+        else if (t.status === "cancelled") statusHtml = '<div style="color:#8a7f88;font-size:13px;">↩️ 已撤销</div>';
         else statusHtml = '<div style="color:#c2602b;font-size:13px;">⏳ 等待' + getRoleShort("admin") + '审批中…</div>';
+        let cancelBtn = "";
+        if (t.status === "pending" && t.requester === loginState.role) {
+            cancelBtn = '<div class="row" style="justify-content:flex-end;margin:6px 0 0;"><button class="btn-exit btn-sm" onclick="cancelPendingTask(' + data.pendingTasks.indexOf(t) + ')">↩️ 撤销申请</button></div>';
+        }
         div.innerHTML = '<div class="msg-title">📮 ' + t.text + '</div>' +
             (t.note ? '<div class="item-note">📝 私密随笔：' + t.note + '</div>' : "") + statusHtml +
-            '<div style="color:#94848c;font-size:12px;">申请时间：' + t.time + (t.handledTime ? '｜处理：' + t.handledTime : "") + '</div>';
+            '<div style="color:#94848c;font-size:12px;">申请时间：' + t.time + (t.handledTime ? '｜处理：' + t.handledTime : "") + '</div>' + cancelBtn;
         w.appendChild(div);
     });
     if (mine.length > applyShowCount) {
@@ -1016,7 +1031,7 @@ function renderMyPendingList() {
 function renderAdminPendingList() {
     const w = document.getElementById("adminPendingList"); if (!w) return;
     w.innerHTML = "";
-    const pendingList = (data.pendingTasks || []).filter(x => x.status !== "approved" && x.status !== "rejected" && x.status !== "completed");
+    const pendingList = (data.pendingTasks || []).filter(x => x.status !== "approved" && x.status !== "rejected" && x.status !== "completed" && x.status !== "cancelled");
     const handledCount = (data.pendingTasks || []).length - pendingList.length;
     if (pendingList.length === 0) {
         w.innerHTML = '<div style="padding:8px 4px;color:#84747c;font-size:13px;">暂无待审批的任务申请' + (handledCount > 0 ? '（已处理 ' + handledCount + ' 条，见' + getRoleShort("user") + '申请记录）' : '') + '</div>';
