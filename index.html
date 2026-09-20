@@ -107,6 +107,11 @@ button:disabled{background:#bbb !important;box-shadow:none;cursor:not-allowed;op
 .chat-bubble.recalled{background:#f2f0f1;color:#9a8f95;font-style:italic;box-shadow:none;}
 .recall-btn{display:inline-block;margin-top:4px;font-size:11px;color:#e8c4da;cursor:pointer;background:none;border:none;padding:0;height:auto;flex:none;box-shadow:none;}
 .recall-btn:hover{filter:none;transform:none;box-shadow:none;color:#f3dcec;}
+.voice-bar{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:999px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);color:#fff;cursor:pointer;font-size:13px;min-width:96px;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.08);transition:transform .15s;}
+.voice-bar:hover{transform:translateY(-1px);}
+.chat-bubble.other .voice-bar{background:#f6ecf5;color:#7d4a68;border-color:#ecd5e6;}
+body.dark .chat-bubble.other .voice-bar{background:#3a2d42;color:#e8d4e6;border-color:var(--border);}
+.voice-ico{font-size:11px;line-height:1;}
 .chat-head{font-size:11px;color:#9a8496;margin-bottom:4px;display:block;}
 .chat-bubble.me .chat-head{color:#f0d6e6;}
 .login-box{padding:28px 10px;text-align:center;}
@@ -259,7 +264,7 @@ body.dark [style*="#6347a2"]{color:#d0b6f0!important;}
 <div class="info-card">
 <h3 style="display:flex;justify-content:space-between;align-items:center;"><span>💬 即时消息<span id="msgUnreadBadge" class="secret-badge hide" onclick="markMsgRead()" style="cursor:pointer;">0</span><span id="onlineBadge" class="online-badge offline">⚪ 好友离线</span></span><button class="btn-purple btn-sm" onclick="openSecretModal()">💌 悄悄话<span id="secretBadge" class="secret-badge hide">0</span></button></h3>
 <div id="instantMsgList" class="msg-list"></div>
-<div class="row" style="margin-bottom:0;"><input type="text" id="instantMsgInput" class="grow" placeholder="写句话发给伙伴" autocomplete="off"><button class="btn-purple" onclick="sendInstantMsg()">📤 发送</button></div>
+<div class="row" style="margin-bottom:0;"><button id="voiceRecordBtn" class="btn-blue" style="flex:0 0 auto;width:52px;font-size:16px;" onclick="toggleRecordVoice()" title="🎤 语音留言（最长60秒，点击开始/结束）">🎤</button><input type="text" id="instantMsgInput" class="grow" placeholder="写句话发给伙伴，或点🎤语音留言" autocomplete="off"><button class="btn-purple" onclick="sendInstantMsg()">📤 发送</button></div>
 </div>
 <div class="info-card">
 <h3>🌿 情绪小记</h3>
@@ -934,6 +939,7 @@ function backToRoomPage() {
     loginState = { isLogin: false, role: "" }; sessionStorage.removeItem("loveLoginState");
     sessionStorage.removeItem("secretNotified");
     stopPresence();
+    stopVoiceAll();
     clearRoomSession(); showPage("room");
     manualTheme = null; applyTheme();
 }
@@ -1680,12 +1686,22 @@ function renderInstantMessages() {
         head.className = "chat-head";
         const lvIcon = m.role === "admin" ? "👑" : getLevelIcons(data.point);
         head.innerText = lvIcon + " " + (m.roleName || getRoleName(m.role)) + " " + (m.time || "");
-        const body = document.createElement("div"); body.innerText = m.text;
+        const body = document.createElement("div");
         bubble.appendChild(head); bubble.appendChild(body);
         if (m.recalled) {
             bubble.classList.add("recalled");
             body.innerText = (isMe ? "你撤回了一条消息" : "对方撤回了一条消息");
-        } else if (isMe && m.time) {
+        } else if (m.voice) {
+            const vb = document.createElement("button");
+            vb.className = "voice-bar";
+            vb.dataset.dur = m.voiceDur || "";
+            vb.innerHTML = '<span class="voice-ico">▶</span><span class="voice-dur">' + (m.voiceDur || "") + '″</span>';
+            vb.onclick = () => toggleVoicePlay(vb, m.voice);
+            body.appendChild(vb);
+        } else {
+            body.innerText = m.text;
+        }
+        if (isMe && m.time) {
             const age = Date.now() - (m.ts ? m.ts : new Date(m.time).getTime());
             if (!isNaN(age) && age >= 0 && age <= 60000) {
                 const rBtn = document.createElement("button");
@@ -1705,17 +1721,11 @@ async function recallMsg(idx) {
     if (m.recalled) return;
     const age = Date.now() - (m.ts ? m.ts : new Date(m.time).getTime());
     if (isNaN(age) || age < 0 || age > 60000) { alert("⏱️ 仅可撤回发送 1 分钟内的消息"); return; }
-    m.recalled = true; m.text = "";
+    m.recalled = true; m.text = ""; m.voice = ""; m.voiceDur = 0;
     await save(); render();
     alert("✅ 已撤回");
 }
-async function sendInstantMsg() {
-    const input = document.getElementById("instantMsgInput");
-    const txt = (input.value || "").trim();
-    if (!txt) return;
-    const roleName = getRoleName(loginState.role);
-    const nowTs = Date.now();
-    const msg = { role: loginState.role, roleName: roleName, text: txt, time: new Date(nowTs).toLocaleString(), ts: nowTs };
+function saveChatMessage(msg) {
     if (!data.messages) data.messages = [];
     data.messages.push(msg);
     if (!data.msgReadPos || typeof data.msgReadPos !== "object") data.msgReadPos = {};
@@ -1723,13 +1733,110 @@ async function sendInstantMsg() {
     if (!data.sendCount || typeof data.sendCount !== "object") data.sendCount = { admin: 0, user: 0 };
     data.sendCount[loginState.role] = (data.sendCount[loginState.role] || 0) + 1;
     const latestMood = data.moodList && data.moodList[0];
+    const roleName = getRoleName(loginState.role);
     if (latestMood && latestMood.mood && /低落|烦躁/.test(latestMood.mood) && latestMood.role !== roleName &&
         (Date.now() - (latestMood.ts ? latestMood.ts : new Date(latestMood.time).getTime())) < 7 * 86400000) {
         if (!data.careCount || typeof data.careCount !== "object") data.careCount = { admin: 0, user: 0 };
         data.careCount[loginState.role] = (data.careCount[loginState.role] || 0) + 1;
     }
+}
+async function sendInstantMsg() {
+    const input = document.getElementById("instantMsgInput");
+    const txt = (input.value || "").trim();
+    if (!txt) return;
+    const nowTs = Date.now();
+    const msg = { role: loginState.role, roleName: getRoleName(loginState.role), text: txt, time: new Date(nowTs).toLocaleString(), ts: nowTs };
+    saveChatMessage(msg);
     input.value = "";
     await save(); render();
+}
+/* ---------------- 语音留言 ---------------- */
+let mediaRecorder = null;
+let mediaChunks = [];
+let recordingTimer = null;
+let recordStartTs = 0;
+let audioPlaying = null;
+const VOICE_MAX_SEC = 60;
+function resetRecordBtn() {
+    const btn = document.getElementById("voiceRecordBtn");
+    if (btn) { btn.innerText = "🎤"; btn.style.background = ""; }
+    clearTimeout(recordingTimer);
+}
+function updateRecordUI() {
+    const btn = document.getElementById("voiceRecordBtn");
+    if (!btn) return;
+    const sec = Math.floor((Date.now() - recordStartTs) / 1000);
+    if (sec >= VOICE_MAX_SEC) { stopRecordingVoice(true); return; }
+    btn.innerText = "⏹ " + sec + "s";
+    btn.style.background = "linear-gradient(135deg,#e8747f,#d24a5f)";
+    recordingTimer = setTimeout(updateRecordUI, 1000);
+}
+function stopRecordingVoice(auto) {
+    if (!mediaRecorder) return;
+    try { if (mediaRecorder.state === "recording") mediaRecorder.stop(); } catch (e) {}
+    if (auto) alert("录音达到 " + VOICE_MAX_SEC + " 秒上限，已自动停止发送");
+}
+async function toggleRecordVoice() {
+    if (mediaRecorder && mediaRecorder.state === "recording") { stopRecordingVoice(false); return; }
+    if (!navigator.mediaDevices || !window.MediaRecorder) { alert("当前浏览器不支持录音，请使用最新版浏览器（Chrome/Edge/Safari）"); return; }
+    let stream;
+    try {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (e) {
+        alert("无法使用麦克风：" + (e.message || "请确认已授予麦克风权限"));
+        return;
+    }
+    mediaChunks = [];
+    const mime = MediaRecorder.isTypeSupported("audio/webm;codecs=opus") ? "audio/webm;codecs=opus" : "audio/webm";
+    try {
+        mediaRecorder = new MediaRecorder(stream, { mimeType: mime, audioBitsPerSecond: 48000 });
+    } catch (e) {
+        mediaRecorder = new MediaRecorder(stream);
+    }
+    recordStartTs = Date.now();
+    mediaRecorder.ondataavailable = e => { if (e.data && e.data.size > 0) mediaChunks.push(e.data); };
+    mediaRecorder.onstop = () => {
+        stream.getTracks().forEach(t => t.stop());
+        mediaRecorder = null;
+        clearTimeout(recordingTimer);
+        const dur = Math.round((Date.now() - recordStartTs) / 1000);
+        const btn = document.getElementById("voiceRecordBtn");
+        if (btn) { btn.innerText = "🎤"; btn.style.background = ""; }
+        if (mediaChunks.length === 0) return;
+        if (dur < 1) { alert("录音太短啦，再试一次吧"); return; }
+        const blob = new Blob(mediaChunks, { type: mime });
+        const reader = new FileReader();
+        reader.onload = async () => {
+            const base64 = reader.result;
+            const nowTs = Date.now();
+            const msg = { role: loginState.role, roleName: getRoleName(loginState.role), text: "", time: new Date(nowTs).toLocaleString(), ts: nowTs, voice: base64, voiceDur: dur };
+            saveChatMessage(msg);
+            await save(); render();
+        };
+        reader.readAsDataURL(blob);
+    };
+    mediaRecorder.start();
+    updateRecordUI();
+}
+function toggleVoicePlay(btn, base64) {
+    if (audioPlaying && audioPlaying.src === base64) {
+        audioPlaying.pause(); audioPlaying = null;
+        if (btn) { btn.innerHTML = '<span class="voice-ico">▶</span><span class="voice-dur">' + btn.dataset.dur + '″</span>'; }
+        return;
+    }
+    if (audioPlaying) audioPlaying.pause();
+    const a = new Audio(base64);
+    audioPlaying = a;
+    if (btn) { btn.innerHTML = '<span class="voice-ico">⏸</span><span class="voice-dur">' + btn.dataset.dur + '″</span>'; }
+    a.onended = () => { audioPlaying = null; if (btn) btn.innerHTML = '<span class="voice-ico">▶</span><span class="voice-dur">' + btn.dataset.dur + '″</span>'; };
+    a.play().catch(() => { audioPlaying = null; if (btn) btn.innerHTML = '<span class="voice-ico">▶</span><span class="voice-dur">' + btn.dataset.dur + '″</span>'; });
+}
+function stopVoiceAll() {
+    if (audioPlaying) { try { audioPlaying.pause(); } catch (e) {} audioPlaying = null; }
+    if (mediaRecorder && mediaRecorder.state === "recording") { try { mediaRecorder.stop(); } catch (e) {} }
+    mediaRecorder = null;
+    clearTimeout(recordingTimer);
+    resetRecordBtn();
 }
 /* ---------------- 悄悄话 ---------------- */
 const OTHER_ROLE = r => (r === "admin" ? "user" : "admin");
