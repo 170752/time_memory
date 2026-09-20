@@ -524,7 +524,7 @@ body.dark .badge-unlock-item{background:#33273a;color:var(--text-main);}
 <div class="field"><label>选项 A</label><input type="text" id="quizEditA" maxlength="16" placeholder="选项 A"></div>
 <div class="field"><label>选项 B</label><input type="text" id="quizEditB" maxlength="16" placeholder="选项 B"></div>
 <div class="btn-row"><button class="btn-purple" onclick="saveQuizEdit()">✅ 发布新题</button><button class="btn-exit" onclick="toggleHide('quizEditModal')">取消</button></div>
-<p class="field-hint">发布后双方都会刷新为新题目，需要重新作答；新旧题目的作答记录都会保留在回顾里。</p>
+<p class="field-hint">发布后双方都会刷新为新题目，需要重新作答；今日已答的记录将作废。</p>
 </div>
 </div>
 
@@ -2891,9 +2891,11 @@ async function saveQuizEdit() {
     data.quizDaily.custom = { q: q, a: a, b: b };
     data.quizDaily.answers = {};
     delete data.quizDaily.doneAt;
+    const today = todayStr();
+    data.quizRecords = (data.quizRecords || []).filter(r => r.date !== today);
     document.getElementById("quizEditModal").classList.add("hide");
     await save(); render();
-    alert("✅ 新题目已发布，双方将同步刷新；新旧题目的作答记录都会保留在回顾里～");
+    alert("✅ 新题目已发布，双方将同步刷新，快去选一个答案吧～");
 }
 function quizStreak() {
     const set = new Set((data.quizRecords || []).filter(r => r.match && r.date).map(r => r.date));
