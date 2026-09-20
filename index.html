@@ -301,6 +301,12 @@ body.dark [style*="#6347a2"]{color:#d0b6f0!important;}
 <p class="field-hint" id="applyHintLabel">只申请事项；审批通过后由A伙伴设置积分并发布任务，拒绝时会告知理由。</p>
 <h4 style="margin-top:12px;">📭 我的申请记录</h4>
 <div id="myPendingList"></div>
+<h4 style="margin-top:14px;">📝 申请新增一份小约定</h4>
+<div class="field"><textarea id="pactApplyText" placeholder="想和对方一起完成的小约定，如：周末一起去看海、一起做顿晚餐" rows="2"></textarea></div>
+<div class="btn-row"><button class="btn-purple" onclick="submitPactApply()">📝 提交约定申请</button></div>
+<p class="field-hint">只申请约定内容；审批通过后由A伙伴设置积分、期望时间与私密随笔并发布。</p>
+<h4 style="margin-top:12px;">📭 我的约定申请记录</h4>
+<div id="myPactApplyList"></div>
 </div>
 <div class="chart-wrap">
 <h3>📈 积分变化记录</h3>
@@ -320,6 +326,9 @@ body.dark [style*="#6347a2"]{color:#d0b6f0!important;}
 <div id="adminPendingList"></div>
 <p class="field-hint">同意后任务发布到「待兑现清单」，B完成标记后由你判断完成度并发积分。</p>
 </div>
+<h3>📝 待审批的小约定申请（B伙伴申请）</h3>
+<div id="adminPactApplyList"></div>
+<p class="field-hint">同意后约定发布到「待兑现清单」；可设置积分、期望完成时间、私密随笔与置顶。</p>
 <h3>💫 新增一份小约定</h3>
 <div class="field"><textarea id="sendTaskText" placeholder="写下两个人之间想要完成的小事约定" rows="2"></textarea></div>
 <div class="field"><label>📝 私密随笔（仅我可见）</label><input type="text" id="sendTaskNote" placeholder="私密随笔"></div>
@@ -498,6 +507,7 @@ function ensureDataFields(d) {
     if (!d.shopGoods) d.shopGoods = [];
     if (!d.shopApplies) d.shopApplies = [];
     if (!d.returnApplies) d.returnApplies = [];
+    if (!d.pactApplies) d.pactApplies = [];
     if (Array.isArray(d.shopGoods)) d.shopGoods.forEach(g => { if (g.qty === undefined) g.qty = 1; });
     if (!d.shopRecords) d.shopRecords = [];
     if (!d.messages) d.messages = [];
@@ -1101,6 +1111,104 @@ function renderAdminPendingList() {
     });
 }
 function isReadOnlyMode() { return data.point < MIN_POINT; }
+
+/* ---------------- 小约定申请（B申请 → A审批） ---------------- */
+async function submitPactApply() {
+    const t = document.getElementById("pactApplyText").value.trim();
+    if (!t) { alert("请填写想申请的小约定内容"); return; }
+    if (!submitGuard("pactApply")) return;
+    data.pactApplies.unshift({ text: t, requester: "user", status: "pending", time: new Date().toLocaleString() });
+    await save(); render();
+    document.getElementById("pactApplyText").value = "";
+    alert("✅ 约定申请已提交，等待" + getRoleShort("admin") + "审批");
+}
+async function approvePactApply(idx) {
+    const a = data.pactApplies[idx]; if (!a) return;
+    if (a.status !== "pending") { alert("该申请已处理过了"); return; }
+    const pt = Math.round(Number(document.getElementById("pactApprovePoint_" + idx).value));
+    if (isNaN(pt) || pt < 0) { alert("请先设置约定积分（不能为负数）"); return; }
+    const note = document.getElementById("pactApproveNote_" + idx).value.trim();
+    const et = document.getElementById("pactApproveExpire_" + idx).value;
+    const top = document.getElementById("pactApproveTop_" + idx).checked;
+    a.basePoint = pt; a.note = note; a.expireTime = et || null; a.top = top;
+    a.status = "approved";
+    a.handledTime = new Date().toLocaleString();
+    data.msgList.push({ text: a.text, basePoint: pt, note: note, expireTime: et || null, top: top, requester: "user" });
+    await save(); render();
+    alert("✅ 已同意发布约定「" + a.text + "」，约定积分：" + pt);
+}
+function togglePactRejectBox(idx) { toggleHide("pactRejectBox_" + idx); }
+async function rejectPactApply(idx) {
+    const a = data.pactApplies[idx]; if (!a) return;
+    if (a.status !== "pending") { alert("该申请已处理过了"); return; }
+    const inp = document.getElementById("pactRejectReason_" + idx);
+    a.rejectReason = inp ? inp.value.trim() : "";
+    a.status = "rejected";
+    a.handledTime = new Date().toLocaleString();
+    await save(); render();
+    alert(a.rejectReason ? "已拒绝，理由已告知申请人" : "已拒绝该约定申请");
+}
+async function cancelPactApply(idx) {
+    const a = data.pactApplies[idx]; if (!a) return;
+    if (a.requester !== loginState.role) return;
+    if (a.status !== "pending") { alert("该申请已处理过了，无法撤销"); return; }
+    if (!confirm("🗑️ 确认撤销约定申请「" + a.text + "」？")) return;
+    a.status = "cancelled";
+    a.handledTime = new Date().toLocaleString();
+    await save(); render();
+    alert("✅ 已撤销该约定申请，对方不再收到审批提示");
+}
+function renderAdminPactApplyList() {
+    const w = document.getElementById("adminPactApplyList"); if (!w) return;
+    w.innerHTML = "";
+    const pendingList = (data.pactApplies || []).filter(x => x.status === "pending");
+    if (pendingList.length === 0) {
+        w.innerHTML = '<div style="padding:8px 4px;color:#84747c;font-size:13px;">暂无待审批的约定申请</div>';
+        return;
+    }
+    pendingList.forEach(a => {
+        const idx = data.pactApplies.indexOf(a);
+        const div = document.createElement("div"); div.className = "item-card";
+        div.innerHTML = '<div class="msg-title">📝 ' + a.text + '</div><div>申请人：' + getRoleName("user") + '</div>' +
+            '<div style="color:#94848c;font-size:12px;">申请时间：' + a.time + '</div>' +
+            '<div class="field"><label>📝 私密随笔（选填）</label><input type="text" id="pactApproveNote_' + idx + '" placeholder="仅我可见的私密随笔"></div>' +
+            '<div class="row"><input type="number" id="pactApprovePoint_' + idx + '" class="grow" placeholder="设置约定积分" min="0" value="20"><button class="btn-green" onclick="approvePactApply(' + idx + ')">✅ 同意发布</button></div>' +
+            '<div class="field"><label>⏰ 期望完成时间（选填）</label><input type="datetime-local" id="pactApproveExpire_' + idx + '"></div>' +
+            '<div class="row"><label style="display:flex;align-items:center;gap:8px;font-size:14px;flex:1 1 0;min-width:0;"><input type="checkbox" id="pactApproveTop_' + idx + '" style="width:18px;height:18px;flex:none;">⭐ 置顶这条约定</label></div>' +
+            '<div class="row"><button class="btn-red" style="flex:1 1 0;" onclick="togglePactRejectBox(' + idx + ')">❌ 拒绝（可选理由）</button></div>' +
+            '<div id="pactRejectBox_' + idx + '" class="hide"><div class="row"><input type="text" id="pactRejectReason_' + idx + '" class="grow" placeholder="拒绝理由（可留空）"><button class="btn-red" onclick="rejectPactApply(' + idx + ')">确认拒绝</button></div></div>';
+        w.appendChild(div);
+    });
+}
+let pactApplyShowCount = 6;
+function loadMorePactApply() { pactApplyShowCount += 6; renderMyPactApplies(); }
+function renderMyPactApplies() {
+    const w = document.getElementById("myPactApplyList"); if (!w) return;
+    w.innerHTML = "";
+    const mine = (data.pactApplies || []).filter(x => x.requester === loginState.role);
+    if (mine.length === 0) { w.innerHTML = '<div style="padding:8px 4px;color:#84747c;font-size:13px;">暂无约定申请记录</div>'; return; }
+    mine.slice(0, pactApplyShowCount).forEach(a => {
+        const div = document.createElement("div"); div.className = "item-card";
+        let st = "";
+        if (a.status === "approved") st = '<div style="color:#2d8a56;font-size:13px;">✅ 已同意 · 约定积分：' + a.basePoint + ' · 已进入待兑现清单</div>';
+        else if (a.status === "rejected") st = '<div style="color:#b73b4f;font-size:13px;">❌ 已拒绝' + (a.rejectReason ? '｜理由：' + a.rejectReason : '') + '</div>';
+        else if (a.status === "cancelled") st = '<div style="color:#8a7f88;font-size:13px;">↩️ 已撤销</div>';
+        else st = '<div style="color:#c2602b;font-size:13px;">⏳ 等待' + getRoleShort("admin") + '审批中…</div>';
+        let cancelBtn = "";
+        if (a.status === "pending" && a.requester === loginState.role) {
+            cancelBtn = '<div class="row" style="justify-content:flex-end;margin:6px 0 0;"><button class="btn-exit btn-sm" onclick="cancelPactApply(' + data.pactApplies.indexOf(a) + ')">↩️ 撤销申请</button></div>';
+        }
+        div.innerHTML = '<div class="msg-title">📝 ' + a.text + '</div>' + st +
+            '<div style="color:#94848c;font-size:12px;">申请时间：' + a.time + (a.handledTime ? '｜处理：' + a.handledTime : "") + '</div>' + cancelBtn;
+        w.appendChild(div);
+    });
+    if (mine.length > pactApplyShowCount) {
+        const more = document.createElement("div");
+        more.style.textAlign = "center";
+        more.innerHTML = '<button class="btn-more" onclick="loadMorePactApply()">📜 查看更早申请（' + (mine.length - pactApplyShowCount) + ' 条）</button>';
+        w.appendChild(more);
+    }
+}
 async function unlockRecordPlus() {
     if (loginState.role !== "user") { alert("仅" + getRoleShort("user") + "需要解锁"); return; }
     if (data.recordUnlockedPlus) { alert("加分记录已解锁"); return; }
@@ -1929,11 +2037,12 @@ function hasTodoItems() {
     const taskPending = (data.pendingTasks || []).filter(x => x.status === "pending");
     const shopPending = (data.shopApplies || []).filter(x => x.status === "pending");
     const returnPending = (data.returnApplies || []).filter(x => x.status === "pending");
+    const pactPending = (data.pactApplies || []).filter(x => x.status === "pending");
     const shipPending = (data.shopRecords || []).filter(r => r.shipped === false && r.signed !== true);
     const signPending = (data.shopRecords || []).filter(r => r.shipped === true && r.signed !== true);
     const confirmPending = data.waitConfirmTasks || [];
     return loginState.role === "admin"
-        ? (confirmPending.length > 0 || taskPending.length > 0 || shopPending.length > 0 || returnPending.length > 0 || shipPending.length > 0)
+        ? (confirmPending.length > 0 || taskPending.length > 0 || shopPending.length > 0 || returnPending.length > 0 || pactPending.length > 0 || shipPending.length > 0)
         : (undone.length > 0 || signPending.length > 0);
 }
 function showLoginSummary() { showGreetingSummary(); }
@@ -1950,6 +2059,7 @@ function showTodoSummary() {
     document.getElementById("loginSummaryCloseBtn").setAttribute("onclick", "closeLoginSummary()");
     let html = "";
     const returnPending = (data.returnApplies || []).filter(x => x.status === "pending");
+    const pactPending = (data.pactApplies || []).filter(x => x.status === "pending");
     const shipPending = (data.shopRecords || []).filter(r => r.shipped === false && r.signed !== true);
     const signPending = (data.shopRecords || []).filter(r => r.shipped === true && r.signed !== true);
     if (loginState.role === "user") {
@@ -1980,6 +2090,9 @@ function showTodoSummary() {
         }
         if (returnPending.length > 0) {
             html += '<div style="margin-top:4px;">🔙 待处理退货申请：<b>' + returnPending.length + '</b>' + ' <span style="cursor:pointer;color:#a86b94;font-size:13px;" onclick="gotoSection(\'shopReturnPendingWrap\')">→ 前往</span></div>';
+        }
+        if (pactPending.length > 0) {
+            html += '<div style="margin-top:4px;">📝 待审批约定申请：<b>' + pactPending.length + '</b>' + ' <span style="cursor:pointer;color:#a86b94;font-size:13px;" onclick="gotoSection(\'adminPactApplyList\')">→ 前往</span></div>';
         }
         if (shipPending.length > 0) {
             html += '<div style="margin-top:4px;">📦 待发货商品：<b>' + shipPending.length + '</b>' + ' <span style="cursor:pointer;color:#a86b94;font-size:13px;" onclick="gotoSection(\'shopRecordWrap\')">→ 前往</span></div>';
@@ -2062,7 +2175,7 @@ function login() {
     localStorage.setItem("loveRememberedLogin", JSON.stringify({ role: loginState.role, pwd: pwd }));
     sessionStorage.removeItem("secretNotified");
     chatShowCount = 6; moodShowCount = 6; applyShowCount = 6; shopApplyShowCount = 6;
-    finishShowCount = 6; recShowCount = 6; shopRecShowCount = 6; secretShowCount = 6;
+    finishShowCount = 6; recShowCount = 6; shopRecShowCount = 6; secretShowCount = 6; pactApplyShowCount = 6;
     lastFinishSeen = -1; lastExchangeSeen = -1;
     sessionStorage.setItem("loveLoginState", JSON.stringify(loginState)); render();
     setTimeout(showLoginSummary, 600);
@@ -2353,6 +2466,8 @@ function render() {
     if (loginState.role === "user") { applyArea.classList.remove("hide"); renderMyPendingList(); }
     else { applyArea.classList.add("hide"); }
     renderAdminPendingList();
+    renderAdminPactApplyList();
+    renderMyPactApplies();
     const shopPendingWrap = document.getElementById("shopApplyPendingWrap");
     const shopFormArea = document.getElementById("shopApplyFormArea");
     if (loginState.role === "admin") { shopPendingWrap.classList.remove("hide"); shopFormArea.classList.add("hide"); }
