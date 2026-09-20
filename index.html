@@ -122,7 +122,9 @@ body.dark .anniv-bar{background:#3a2534;border-color:#5a3a4d;color:#f3c8de;}
 body.dark .anniv-custom-item{background:#33273a;color:#e2c8dc;}
 .quiz-add{font-size:12px;color:#a86b94;cursor:pointer;font-weight:600;}
 .quiz-add:hover{color:#c487aa;}
+body.dark .quiz-add{color:#d9a3c4;}
 .quiz-streak-tip{font-size:12px;color:#a86b94;font-weight:600;}
+body.dark .quiz-streak-tip{color:#d9a3c4;}
 .quiz-box{text-align:center;padding:6px 2px;}
 .quiz-q{font-size:15px;font-weight:600;color:var(--text);margin-bottom:12px;line-height:1.6;}
 .quiz-opt{display:block;width:100%;margin:8px 0;padding:11px 14px;border-radius:12px;border:1.5px solid var(--border);background:var(--card);color:var(--text);font-size:14px;cursor:pointer;transition:all .15s;text-align:center;}
@@ -1792,6 +1794,7 @@ function saveChatMessage(msg) {
     data.messages.push(msg);
     if (!data.msgReadPos || typeof data.msgReadPos !== "object") data.msgReadPos = {};
     data.msgReadPos[loginState.role] = (data.messages || []).filter(m => m.role && m.role !== loginState.role).length;
+    if (msg.isSystem) return;
     if (!data.sendCount || typeof data.sendCount !== "object") data.sendCount = { admin: 0, user: 0 };
     data.sendCount[loginState.role] = (data.sendCount[loginState.role] || 0) + 1;
     const latestMood = data.moodList && data.moodList[0];
@@ -2541,10 +2544,6 @@ function nextCustomAnniv() {
     });
     return best;
 }
-function isTodayTs(t) {
-    const d = new Date(), x = new Date(t);
-    return d.getFullYear() === x.getFullYear() && d.getMonth() === x.getMonth() && d.getDate() === x.getDate();
-}
 function renderAnniv() {
     const bar = document.getElementById("annivBar");
     if (!bar) return;
@@ -2570,6 +2569,7 @@ function renderAnniv() {
 function toggleAnnivAdd() { toggleHide("annivAddBox"); }
 async function addAnnivDate() {
     if (loginState.role !== "admin") return;
+    if (!submitGuard("annivAdd", 1500)) return;
     const name = document.getElementById("annivName").value.trim();
     const date = document.getElementById("annivDate").value;
     if (!name || !date) { alert("请填写纪念日名称和日期"); return; }
@@ -2579,6 +2579,7 @@ async function addAnnivDate() {
     await save(); render(); toggleAnnivAdd();
 }
 async function delAnnivDate(i) {
+    if (loginState.role !== "admin") return;
     if (!confirm("删除该纪念日？")) return;
     data.annivDates.splice(i, 1);
     await save(); render();
