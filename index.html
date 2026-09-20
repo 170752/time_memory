@@ -112,6 +112,28 @@ button:disabled{background:#bbb !important;box-shadow:none;cursor:not-allowed;op
 .chat-bubble.other .voice-bar{background:#f6ecf5;color:#7d4a68;border-color:#ecd5e6;}
 body.dark .chat-bubble.other .voice-bar{background:#3a2d42;color:#e8d4e6;border-color:var(--border);}
 .voice-ico{font-size:11px;line-height:1;}
+.cheer-banner{margin-bottom:8px;padding:9px 14px;border-radius:12px;background:linear-gradient(135deg,#fdeef5,#fbe4ee);border:1px solid #f3cddf;color:#a85d80;font-size:13px;cursor:pointer;text-align:center;transition:transform .15s;}
+.cheer-banner:hover{transform:translateY(-1px);}
+body.dark .cheer-banner{background:#3a2534;border-color:#5a3a4d;color:#f3c8de;}
+.anniv-bar{padding:10px 14px;border-radius:12px;background:linear-gradient(135deg,#fdf0f5,#fbe8f0);border:1px solid #f3cddf;color:#a85d80;font-size:14px;line-height:1.7;}
+body.dark .anniv-bar{background:#3a2534;border-color:#5a3a4d;color:#f3c8de;}
+.anniv-custom-list{margin-top:8px;font-size:13px;}
+.anniv-custom-item{display:flex;justify-content:space-between;align-items:center;padding:6px 10px;border-radius:8px;background:rgba(240,220,235,.35);margin-top:6px;color:#7d5a70;}
+body.dark .anniv-custom-item{background:#33273a;color:#e2c8dc;}
+.quiz-add{font-size:12px;color:#a86b94;cursor:pointer;font-weight:600;}
+.quiz-add:hover{color:#c487aa;}
+.quiz-streak-tip{font-size:12px;color:#a86b94;font-weight:600;}
+.quiz-box{text-align:center;padding:6px 2px;}
+.quiz-q{font-size:15px;font-weight:600;color:var(--text);margin-bottom:12px;line-height:1.6;}
+.quiz-opt{display:block;width:100%;margin:8px 0;padding:11px 14px;border-radius:12px;border:1.5px solid var(--border);background:var(--card);color:var(--text);font-size:14px;cursor:pointer;transition:all .15s;text-align:center;}
+.quiz-opt:hover{border-color:#d9a3c4;transform:translateY(-1px);}
+.quiz-opt.picked{border-color:#c76aa0;background:#fbeef6;color:#8a4a70;font-weight:600;}
+body.dark .quiz-opt.picked{background:#44243a;color:#f3c8de;}
+.quiz-result{margin-top:8px;font-size:15px;line-height:2;}
+.quiz-wait{color:#94848c;font-size:13px;margin-top:6px;}
+.quiz-hist-item{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-radius:8px;background:rgba(240,220,235,.25);margin-top:6px;font-size:13px;color:var(--text);}
+body.dark .quiz-hist-item{background:#33273a;}
+.quiz-hist-item .m{color:#c76aa0;font-weight:600;}
 .chat-head{font-size:11px;color:#9a8496;margin-bottom:4px;display:block;}
 .chat-bubble.me .chat-head{color:#f0d6e6;}
 .login-box{padding:28px 10px;text-align:center;}
@@ -258,11 +280,22 @@ body.dark [style*="#6347a2"]{color:#d0b6f0!important;}
 <h1>✨时光备忘录2.0</h1>
 <div id="lowPointWarn" class="warn-low hide">⚠️ 当前积分低于-100，仅查看模式，无法兑换商品、标记任务完成</div>
 <div class="info-card">
+<h3 style="display:flex;justify-content:space-between;align-items:center;"><span>❤️ 纪念日</span><span id="annivAddBtn" class="quiz-add" onclick="toggleAnnivAdd()">＋ 添加纪念日</span></h3>
+<div id="annivBar" class="anniv-bar"></div>
+<div id="annivCustomList" class="anniv-custom-list"></div>
+<div id="annivAddBox" class="hide" style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);">
+<div class="row"><input type="text" id="annivName" class="grow" placeholder="纪念日名称，如：我们第一次约会"><input type="date" id="annivDate" style="flex:0 0 auto;width:150px;"></div>
+<div class="btn-row"><button class="btn-purple" onclick="addAnnivDate()">💾 保存纪念日</button><button class="btn-exit" onclick="toggleAnnivAdd()">取消</button></div>
+<p class="field-hint">仅A伙伴可添加；到纪念日当天会有庆祝弹窗提醒双方。</p>
+</div>
+</div>
+<div class="info-card">
 <div class="stat-line"><span>💎 当前积分</span><span style="font-size:22px;font-weight:700;color:var(--primary-dark);"><span id="point">0</span> 分</span></div>
 <div class="stat-line"><span>📊 约定统计</span><span>总计 <b id="totalTask">0</b>｜已完成 <b id="doneTask">0</b>｜待兑现 <b id="waitTask">0</b>｜兑现率 <b id="finishRate">0</b>%</span></div>
 </div>
 <div class="info-card">
 <h3 style="display:flex;justify-content:space-between;align-items:center;"><span>💬 即时消息<span id="msgUnreadBadge" class="secret-badge hide" onclick="markMsgRead()" style="cursor:pointer;">0</span><span id="onlineBadge" class="online-badge offline">⚪ 好友离线</span></span><button class="btn-purple btn-sm" onclick="openSecretModal()">💌 悄悄话<span id="secretBadge" class="secret-badge hide">0</span></button></h3>
+<div id="cheerBanner" class="cheer-banner hide" onclick="focusChatInput()"><span id="cheerText"></span></div>
 <div id="instantMsgList" class="msg-list"></div>
 <div class="row" style="margin-bottom:0;"><button id="voiceRecordBtn" class="btn-blue" style="flex:0 0 auto;width:52px;font-size:16px;" onclick="toggleRecordVoice()" title="🎤 语音留言（最长60秒，点击开始/结束）">🎤</button><input type="text" id="instantMsgInput" class="grow" placeholder="写句话发给伙伴，或点🎤语音留言" autocomplete="off"><button class="btn-purple" onclick="sendInstantMsg()">📤 发送</button></div>
 </div>
@@ -274,6 +307,12 @@ body.dark [style*="#6347a2"]{color:#d0b6f0!important;}
 </div>
 <div class="btn-row"><button class="btn-purple" onclick="addMoodRecord()">💾 保存情绪</button></div>
 <div id="moodListWrap"></div>
+</div>
+<div class="info-card">
+<h3 style="display:flex;justify-content:space-between;align-items:center;"><span>🧩 今日默契问答</span><span id="quizStreakTip" class="quiz-streak-tip"></span></h3>
+<div id="quizBox" class="quiz-box"></div>
+<h4 style="margin-top:12px;">📜 往日默契回顾</h4>
+<div id="quizHistory"></div>
 </div>
 <div class="info-card">
 <h3>🎁 积分商城 - 待兑换小事清单</h3>
@@ -396,6 +435,14 @@ body.dark [style*="#6347a2"]{color:#d0b6f0!important;}
 <div class="level-up-title">🎉 恭喜升级！</div>
 <div id="levelUpText" class="level-up-text"></div>
 <button class="btn-purple" onclick="toggleHide('levelUpModal')">✅ 知道啦</button>
+</div>
+</div>
+<!-- 纪念日庆祝弹窗 -->
+<div id="annivCelebrateModal" class="level-modal hide">
+<div class="level-modal-box" style="text-align:center;padding:30px 24px;">
+<div style="font-size:46px;">🎉</div>
+<div id="annivCelebrateText" class="level-up-title" style="margin-top:12px;white-space:pre-line;"></div>
+<button class="btn-purple" onclick="toggleHide('annivCelebrateModal')">✅ 知道啦</button>
 </div>
 </div>
 
@@ -537,6 +584,10 @@ function ensureDataFields(d) {
     if (d.recordUnlockedPlus === undefined) d.recordUnlockedPlus = d.recordUnlockedCount > 0 || d.recordViewUnlocked === true;
     if (d.recordUnlockedMinus === undefined) d.recordUnlockedMinus = d.recordUnlockedCount > 0 || d.recordViewUnlocked === true;
     if (d.lastLevel === undefined) d.lastLevel = Math.floor((d.point || 0) / 20) + 1;
+    if (!d.annivDates) d.annivDates = [];
+    if (!d.annivCelebrated) d.annivCelebrated = {};
+    if (!d.quizDaily) d.quizDaily = { date: "", qIdx: 0, answers: {} };
+    if (!d.quizRecords) d.quizRecords = [];
     // 数据迁移：历史已确认完成（finishTaskHistory）但申请记录仍停留在 approved 的，标记为 completed
     if (Array.isArray(d.finishTaskHistory) && Array.isArray(d.pendingTasks) && d.finishTaskHistory.length > 0) {
         d.pendingTasks.forEach(p => {
@@ -1677,6 +1728,17 @@ function renderInstantMessages() {
     const startIdx = Math.max(0, msgs.length - chatShowCount);
     for (let i = startIdx; i < msgs.length; i++) {
         const m = msgs[i];
+        if (m.isSystem) {
+            const sys = document.createElement("div");
+            sys.style.textAlign = "center";
+            sys.style.fontSize = "12px";
+            sys.style.color = "#a89a9f";
+            sys.style.padding = "6px 0";
+            sys.style.lineHeight = "1.6";
+            sys.innerText = m.text;
+            wrap.appendChild(sys);
+            continue;
+        }
         const isMe = m.role === loginState.role;
         const div = document.createElement("div");
         div.className = isMe ? "chat-row me" : "chat-row other";
@@ -2183,9 +2245,11 @@ function hasTodoItems() {
     const shipPending = (data.shopRecords || []).filter(r => r.shipped === false && r.signed !== true);
     const signPending = (data.shopRecords || []).filter(r => r.shipped === true && r.signed !== true);
     const confirmPending = data.waitConfirmTasks || [];
-    return loginState.role === "admin"
+    const negMood = getPartnerNegativeMood();
+    const base = loginState.role === "admin"
         ? (confirmPending.length > 0 || taskPending.length > 0 || shopPending.length > 0 || returnPending.length > 0 || pactPending.length > 0 || shipPending.length > 0)
         : (undone.length > 0 || signPending.length > 0);
+    return base || !!negMood;
 }
 function showLoginSummary() { showGreetingSummary(); }
 function closeGreetingAndCheck() {
@@ -2215,6 +2279,10 @@ function showTodoSummary() {
         if (signPending.length > 0) {
             html += '<div style="margin-top:10px;">📦 待签收商品：<b>' + signPending.length + '</b>' + ' <span style="cursor:pointer;color:#a86b94;font-size:13px;" onclick="gotoSection(\'shopRecordWrap\')">→ 前往</span></div>';
         }
+    }
+    const negMood = getPartnerNegativeMood();
+    if (negMood) {
+        html += '<div style="margin-top:10px;">💌 ' + getRoleName(negMood.roleKey) + ' 心情「' + negMood.mood + '」有点低落，记得去哄哄 TA ' + ' <span style="cursor:pointer;color:#a86b94;font-size:13px;" onclick="gotoSection(\'instantMsgList\')">→ 前往</span></div>';
     }
     if (loginState.role === "admin") {
         if (confirmPending.length > 0) {
@@ -2439,6 +2507,247 @@ async function clearPointRecordsByDate() {
     alert("✅ 已清除 " + dt + " 的积分记录 " + (pHit + eHit) + " 条（积分值不变）");
 }
 
+/* ---------------- 纪念日倒计时 ---------------- */
+const ANNIV_MILESTONES = [30, 60, 90, 100, 180, 365, 520, 730, 999, 1314];
+function annivDayNum() { return daysUsed() + 1; }
+function annivNameFor(n) {
+    if (n === 30) return "满月纪念日";
+    if (n === 60) return "60天纪念日";
+    if (n === 90) return "90天纪念日";
+    if (n === 100) return "百天纪念日";
+    if (n === 180) return "半年纪念日";
+    if (n === 365) return "一周年纪念日";
+    if (n === 520) return "520纪念日";
+    if (n === 730) return "两周年纪念日";
+    if (n === 999) return "999纪念日";
+    if (n === 1314) return "1314纪念日";
+    return "第" + n + "天纪念日";
+}
+function nextMilestone() {
+    for (const n of ANNIV_MILESTONES) {
+        const target = FORCED_CREATE + (n - 1) * 86400000;
+        const remain = Math.ceil((target - Date.now()) / 86400000);
+        if (remain > 0) return { key: "ms_" + n, name: annivNameFor(n), remain: remain, target: target };
+    }
+    return null;
+}
+function nextCustomAnniv() {
+    let best = null;
+    (data.annivDates || []).forEach(a => {
+        if (!a.date) return;
+        const t = new Date(a.date + "T00:00:00").getTime();
+        const remain = Math.ceil((t - Date.now()) / 86400000);
+        if (remain >= 0 && (!best || remain < best.remain)) best = { key: "cu_" + a.date, name: a.name || "纪念日", remain: remain, target: t };
+    });
+    return best;
+}
+function isTodayTs(t) {
+    const d = new Date(), x = new Date(t);
+    return d.getFullYear() === x.getFullYear() && d.getMonth() === x.getMonth() && d.getDate() === x.getDate();
+}
+function renderAnniv() {
+    const bar = document.getElementById("annivBar");
+    if (!bar) return;
+    const d = annivDayNum();
+    const nextM = nextMilestone();
+    const nextC = nextCustomAnniv();
+    const next = nextM && nextC ? (nextC.remain < nextM.remain ? nextC : nextM) : (nextM || nextC);
+    let html = "💞 在一起 <b>" + d + "</b> 天";
+    if (next) html += " ｜ 距「" + next.name + "」还有 <b>" + next.remain + "</b> 天";
+    bar.innerHTML = html;
+    const cw = document.getElementById("annivCustomList");
+    if (cw) {
+        cw.innerHTML = "";
+        (data.annivDates || []).forEach((a, i) => {
+            const t = new Date(a.date + "T00:00:00").getTime();
+            const remain = Math.ceil((t - Date.now()) / 86400000);
+            cw.innerHTML += '<div class="anniv-custom-item"><span>' + (a.name || "纪念日") + '（' + a.date + '）' + (remain >= 0 ? ' · 还有 <b>' + remain + '</b> 天' : " · 已过") + '</span>' +
+                (loginState.role === "admin" ? '<button class="btn-exit btn-sm" onclick="delAnnivDate(' + i + ')">删除</button>' : "") + '</div>';
+        });
+    }
+    checkAnnivCelebrate();
+}
+function toggleAnnivAdd() { toggleHide("annivAddBox"); }
+async function addAnnivDate() {
+    if (loginState.role !== "admin") return;
+    const name = document.getElementById("annivName").value.trim();
+    const date = document.getElementById("annivDate").value;
+    if (!name || !date) { alert("请填写纪念日名称和日期"); return; }
+    if (!data.annivDates) data.annivDates = [];
+    data.annivDates.push({ name: name, date: date });
+    document.getElementById("annivName").value = ""; document.getElementById("annivDate").value = "";
+    await save(); render(); toggleAnnivAdd();
+}
+async function delAnnivDate(i) {
+    if (!confirm("删除该纪念日？")) return;
+    data.annivDates.splice(i, 1);
+    await save(); render();
+}
+function checkAnnivCelebrate() {
+    if (!loginState.isLogin) return;
+    if (!data.annivCelebrated) data.annivCelebrated = {};
+    let hit = null;
+    const m = nextMilestone();
+    if (m && m.remain === 0) hit = { key: m.key, name: m.name };
+    if (!hit) {
+        const today = todayStr();
+        (data.annivDates || []).forEach(a => { if (a.date === today) hit = { key: "cu_" + a.date, name: a.name || "纪念日" }; });
+    }
+    if (!hit || data.annivCelebrated[hit.key]) return;
+    data.annivCelebrated[hit.key] = 1;
+    const nowTs = Date.now();
+    saveChatMessage({ role: loginState.role, roleName: getRoleName(loginState.role), text: "🎉 今天是「" + hit.name + "」！", time: new Date(nowTs).toLocaleString(), ts: nowTs, isSystem: true });
+    document.getElementById("annivCelebrateText").innerText = "今天是「" + hit.name + "」！\n愿我们一直这样甜下去～";
+    document.getElementById("annivCelebrateModal").classList.remove("hide");
+    save(); render();
+}
+/* ---------------- 情绪安抚联动 ---------------- */
+const NEGATIVE_MOODS = ["低落", "委屈", "烦躁", "生气", "疲惫"];
+function getPartnerNegativeMood() {
+    const me = loginState.role;
+    const list = data.moodList || [];
+    for (const m of list) {
+        const rk = moodRoleKey(m);
+        if (rk === me) continue;
+        if (NEGATIVE_MOODS.indexOf(m.mood) < 0) continue;
+        const t = m.ts ? new Date(m.ts) : new Date(m.time);
+        if (isNaN(t.getTime())) continue;
+        if (Date.now() - t.getTime() > 7 * 86400000) continue;
+        return m;
+    }
+    return null;
+}
+function renderCheerBanner() {
+    const b = document.getElementById("cheerBanner");
+    if (!b) return;
+    const m = getPartnerNegativeMood();
+    if (!m) { b.classList.add("hide"); return; }
+    const who = getRoleName(m.roleKey);
+    b.classList.remove("hide");
+    document.getElementById("cheerText").innerText = "💌 " + who + " 心情「" + m.mood + "」有点低落，去哄哄 TA 吧 →";
+}
+function focusChatInput() {
+    const inp = document.getElementById("instantMsgInput");
+    if (inp) {
+        inp.scrollIntoView({ behavior: "smooth", block: "center" });
+        setTimeout(function () { inp.focus(); }, 300);
+    }
+}
+/* ---------------- 每日默契问答 ---------------- */
+const QUIZ_BANK = [
+    { q: "对方更喜欢哪种水果？", a: "🍓 草莓", b: "🍉 西瓜" },
+    { q: "对方最喜欢的颜色更接近？", a: "🌸 粉色系", b: "🌊 蓝色系" },
+    { q: "对方更爱哪个季节？", a: "🌱 春天", b: "🍂 秋天" },
+    { q: "对方更喜欢晴天还是雨天？", a: "☀️ 晴天", b: "🌧️ 雨天" },
+    { q: "对方更爱喝什么？", a: "🧋 奶茶", b: "☕ 咖啡" },
+    { q: "对方吃辣吗？", a: "🌶️ 无辣不欢", b: "🥗 清淡为主" },
+    { q: "对方更喜欢猫还是狗？", a: "🐱 猫", b: "🐶 狗" },
+    { q: "对方更偏甜口还是咸口？", a: "🍬 甜口", b: "🍜 咸口" },
+    { q: "对方周末更想宅家还是出门？", a: "🏠 宅家", b: "🌳 出门" },
+    { q: "对方更喜欢白天还是夜晚？", a: "🌞 白天", b: "🌙 夜晚" },
+    { q: "对方更喜欢哪种花？", a: "🌹 玫瑰", b: "🌻 向日葵" },
+    { q: "对方更喜欢海还是山？", a: "🌊 海", b: "⛰️ 山" },
+    { q: "对方更喜欢米饭还是面食？", a: "🍚 米饭", b: "🍜 面食" },
+    { q: "对方更偏爱哪种音乐？", a: "🎵 流行", b: "🎸 民谣" },
+    { q: "对方更爱看电影还是追剧？", a: "🎬 电影", b: "📺 电视剧" },
+    { q: "对方更喜欢吃火锅还是烧烤？", a: "🍲 火锅", b: "🍢 烧烤" },
+    { q: "对方更爱吃甜点还是薯片？", a: "🍰 甜点", b: "🍟 薯片" },
+    { q: "对方更偏爱哪种运动？", a: "🏃 跑步", b: "🏊 游泳" },
+    { q: "对方更喜欢冰饮还是热饮？", a: "🧊 冰的", b: "♨️ 热的" },
+    { q: "对方更喜欢早安还是晚安？", a: "🌅 早安", b: "🌙 晚安" },
+    { q: "下次约会对方更想去？", a: "🎬 看电影", b: "🌷 公园散步" },
+    { q: "最想一起看的风景？", a: "🌅 日出", b: "🎆 烟花" },
+    { q: "未来最想一起旅行去哪？", a: "🏖️ 海边", b: "🏯 古镇" },
+    { q: "对方更期待收到什么礼物？", a: "🤲 亲手做的", b: "🎁 实用的" },
+    { q: "对方生日更想怎么过？", a: "🕯️ 两人安静庆祝", b: "🎉 热闹办一场" },
+    { q: "最想一起学的新技能？", a: "🍳 做饭", b: "💃 跳舞" },
+    { q: "对方更希望未来住在？", a: "🏙️ 城市里", b: "🌲 郊外小屋" },
+    { q: "对方更喜欢哪种拥抱？", a: "🤗 大大的熊抱", b: "💞 轻轻的依偎" }
+];
+function todayStr() {
+    const d = new Date();
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
+function getTodayQuiz() {
+    if (!data.quizDaily || data.quizDaily.date !== todayStr()) {
+        const t0 = new Date(new Date().getFullYear(), 0, 1).getTime();
+        const idx = Math.floor((Date.now() - t0) / 86400000) % QUIZ_BANK.length;
+        data.quizDaily = { date: todayStr(), qIdx: idx, answers: {} };
+    }
+    return QUIZ_BANK[data.quizDaily.qIdx];
+}
+function quizStreak() {
+    const set = new Set((data.quizRecords || []).filter(r => r.match && r.date).map(r => r.date));
+    if (!set.size) return 0;
+    let cur = 0, best = 0;
+    const d = new Date();
+    for (let i = 0; i < 400; i++) {
+        const ds = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+        if (set.has(ds)) { cur++; best = Math.max(best, cur); } else { cur = 0; }
+        d.setDate(d.getDate() - 1);
+    }
+    return best;
+}
+function renderQuizHistory() {
+    const w = document.getElementById("quizHistory");
+    if (!w) return;
+    const recs = (data.quizRecords || []).slice(-6).reverse();
+    if (!recs.length) { w.innerHTML = '<div style="color:#94848c;font-size:13px;padding:6px 2px;">还没有默契记录，快和 TA 一起答题吧～</div>'; return; }
+    w.innerHTML = "";
+    recs.forEach(r => {
+        const div = document.createElement("div");
+        div.className = "quiz-hist-item";
+        div.innerHTML = '<span>' + r.date + ' · ' + r.q + '</span><span class="m">' + (r.match ? "✅ 默契" : "😅 不一致") + '</span>';
+        w.appendChild(div);
+    });
+}
+function renderQuiz() {
+    const box = document.getElementById("quizBox");
+    if (!box || !loginState.isLogin) return;
+    const q = getTodayQuiz();
+    const ans = data.quizDaily.answers || {};
+    const me = loginState.role;
+    const my = ans[me];
+    const otherRole = me === "admin" ? "user" : "admin";
+    const other = ans[otherRole];
+    let html = '<div class="quiz-q">' + q.q + '</div>';
+    if (my !== undefined && my !== null && other !== undefined && other !== null) {
+        const match = my === other;
+        html += '<div class="quiz-result">' + (match ? '🎉 心有灵犀！你们想到一块儿去啦！' : '😆 猜错了～没关系，默契慢慢培养！') + '</div>' +
+            '<div class="quiz-wait">你选了「' + (my === 0 ? q.a : q.b) + '」｜' + getRoleName(otherRole) + ' 选了「' + (other === 0 ? q.a : q.b) + '」</div>';
+    } else if (my !== undefined && my !== null) {
+        html += '<button class="quiz-opt picked" onclick="answerQuiz(' + my + ')">' + (my === 0 ? q.a : q.b) + '</button>' +
+            '<div class="quiz-wait">你已作答，等 ' + getRoleName(otherRole) + ' 也选一个，就能看默契结果啦～（点击可改）</div>';
+    } else {
+        html += '<button class="quiz-opt" onclick="answerQuiz(0)">' + q.a + '</button><button class="quiz-opt" onclick="answerQuiz(1)">' + q.b + '</button>';
+    }
+    box.innerHTML = html;
+    const st = document.getElementById("quizStreakTip");
+    if (st) {
+        const streak = quizStreak();
+        st.innerText = streak > 0 ? "🔥 连续默契 " + streak + " 天" : "每天一题，测测默契～";
+    }
+    renderQuizHistory();
+}
+async function answerQuiz(opt) {
+    if (!loginState.isLogin) return;
+    getTodayQuiz();
+    data.quizDaily.answers[loginState.role] = opt;
+    const q = QUIZ_BANK[data.quizDaily.qIdx];
+    const ans = data.quizDaily.answers;
+    const a = ans.admin, u = ans.user;
+    let bothDone = false;
+    if (a !== undefined && a !== null && u !== undefined && u !== null && !data.quizDaily.doneAt) {
+        bothDone = true;
+        const match = a === u;
+        const nowTs = Date.now();
+        if (!data.quizRecords) data.quizRecords = [];
+        data.quizRecords.push({ date: todayStr(), q: q.q, opts: [q.a, q.b], ansA: a, ansB: u, match: match, time: new Date(nowTs).toLocaleString(), ts: nowTs });
+        data.quizDaily.doneAt = 1;
+    }
+    await save(); render();
+    if (bothDone) checkBadgeUnlocks();
+}
 /* ---------------- 成就徽章系统 ---------------- */
 const BADGES = [
     { id: "pact_first", name: "初结约定", icon: "🤝", cat: "约定", tiers: null, desc: "完成第一个约定" },
@@ -2468,7 +2777,11 @@ const BADGES = [
     { id: "apply_first", name: "勇敢申请", icon: "💪", cat: "申请", tiers: null, only: "user", desc: "提交第一个积分申请" },
     { id: "apply_approved", name: "提案通过", icon: "✅", cat: "申请", tiers: [1, 10, 30], only: "user", desc: "申请被同意发布 {n} 次" },
     { id: "admin_handle", name: "审慎审核", icon: "⚖️", cat: "申请", tiers: [10, 50, 100], only: "admin", desc: "处理任务申请 {n} 个" },
-    { id: "both_way", name: "双向奔赴", icon: "🤝", cat: "申请", tiers: null, desc: "双方各完成5个约定" }
+    { id: "both_way", name: "双向奔赴", icon: "🤝", cat: "申请", tiers: null, desc: "双方各完成5个约定" },
+    { id: "quiz_first", name: "心有灵犀", icon: "🧠", cat: "默契", tiers: null, desc: "第一次默契答题一致" },
+    { id: "quiz_3", name: "默契搭档", icon: "💞", cat: "默契", tiers: null, desc: "连续3天默契答题一致" },
+    { id: "quiz_7", name: "天生一对", icon: "💘", cat: "默契", tiers: null, desc: "连续7天默契答题一致" },
+    { id: "quiz_10", name: "灵魂伴侣", icon: "🔮", cat: "默契", tiers: null, desc: "累计默契答题10次" }
 ];
 function badgeKey(b) { return b.personal ? b.id + "_" + loginState.role : b.id; }
 function badgeVisible(b) { return !b.only || b.only === loginState.role; }
@@ -2532,6 +2845,10 @@ function badgeTier(b) {
         case "apply_approved": val = d.pendingTasks.filter(x => x.requester === "user" && x.status === "approved").length; break;
         case "admin_handle": val = d.pendingTasks.filter(x => x.status === "approved" || x.status === "rejected").length; break;
         case "both_way": val = (d.finishTaskHistory.filter(h => h.requester === "user").length >= 5 && d.finishTaskHistory.filter(h => h.requester === "admin").length >= 5) ? 1 : 0; break;
+        case "quiz_first": val = (d.quizRecords || []).some(r => r.match) ? 1 : 0; break;
+        case "quiz_3": val = quizStreak() >= 3 ? 1 : 0; break;
+        case "quiz_7": val = quizStreak() >= 7 ? 1 : 0; break;
+        case "quiz_10": val = (d.quizRecords || []).filter(r => r.match).length >= 10 ? 1 : 0; break;
     }
     if (!b.tiers) return val ? 1 : 0;
     let t = 0;
@@ -2612,6 +2929,7 @@ function render() {
     const pointDom = document.getElementById("point"); pointDom.innerText = data.point;
     data.point < 0 ? pointDom.classList.add("negative-point") : pointDom.classList.remove("negative-point");
     calcTaskStat(); renderMoodList(); renderInstantMessages(); renderShop();
+    renderAnniv(); renderCheerBanner(); renderQuiz();
     const applyArea = document.getElementById("userTaskApplyArea");
     if (loginState.role === "user") { applyArea.classList.remove("hide"); renderMyPendingList(); }
     else { applyArea.classList.add("hide"); }
