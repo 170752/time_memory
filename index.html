@@ -365,7 +365,7 @@ body.dark .badge-unlock-item{background:#33273a;color:var(--text-main);}
 <div class="info-card">
 <h3>🌿 情绪小记</h3>
 <div class="row">
-<select id="moodSelect" style="flex:0 0 auto;width:150px;"><option value="平静">😌平静</option><option value="开心">😊开心</option><option value="愉悦">🥰愉悦</option><option value="兴奋">🤗兴奋</option><option value="期待">🤩期待</option><option value="思念">💭思念</option><option value="疲惫">😔疲惫</option><option value="委屈">🥺委屈</option><option value="烦躁">😤烦躁</option><option value="生气">😠生气</option><option value="低落">😞低落</option></select>
+<select id="moodSelect" style="flex:0 0 auto;width:150px;"><option value="平静">☺️平静</option><option value="开心">😊开心</option><option value="愉悦">🥰愉悦</option><option value="兴奋">🤗兴奋</option><option value="期待">🤩期待</option><option value="思念">💭思念</option><option value="疲惫">😔疲惫</option><option value="委屈">🥺委屈</option><option value="烦躁">😤烦躁</option><option value="生气">😠生气</option><option value="低落">😞低落</option></select>
 <input type="text" id="moodNote" class="grow" placeholder="记录当下心情">
 </div>
 <div class="btn-row"><button class="btn-purple" onclick="addMoodRecord()">💾 保存情绪</button></div>
@@ -1453,7 +1453,7 @@ async function addMoodRecord() {
     data.moodList.unshift({ roleKey: loginState.role, role: rn, mood: mt, note: mn, time: new Date(nowTs).toLocaleString(), ts: nowTs });
     await save(); render(); document.getElementById("moodNote").value = "";
 }
-const MOOD_EMOJI = { "平静": "😌", "开心": "😊", "愉悦": "🥰", "兴奋": "🤗", "期待": "🤩", "思念": "💭", "疲惫": "😔", "委屈": "🥺", "烦躁": "😤", "生气": "😠", "低落": "😞" };
+const MOOD_EMOJI = { "平静": "☺️", "开心": "😊", "愉悦": "🥰", "兴奋": "🤗", "期待": "🤩", "思念": "💭", "疲惫": "😔", "委屈": "🥺", "烦躁": "😤", "生气": "😠", "低落": "😞" };
 function moodRoleKey(item) {
     if (item.roleKey) return item.roleKey;
     const aNames = [pwdConfig.nickA, "A伙伴"].filter(Boolean);
