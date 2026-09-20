@@ -1133,7 +1133,7 @@ async function approvePactApply(idx) {
     a.basePoint = pt; a.note = note; a.expireTime = et || null; a.top = top;
     a.status = "approved";
     a.handledTime = new Date().toLocaleString();
-    data.msgList.push({ text: a.text, basePoint: pt, note: note, expireTime: et || null, top: top, requester: "user" });
+    data.msgList.push({ text: a.text, basePoint: pt, note: note, expireTime: et || null, top: top, requester: "user", noteOwner: "admin" });
     await save(); render();
     alert("✅ 已同意发布约定「" + a.text + "」，约定积分：" + pt);
 }
@@ -1191,6 +1191,7 @@ function renderMyPactApplies() {
         const div = document.createElement("div"); div.className = "item-card";
         let st = "";
         if (a.status === "approved") st = '<div style="color:#2d8a56;font-size:13px;">✅ 已同意 · 约定积分：' + a.basePoint + ' · 已进入待兑现清单</div>';
+        else if (a.status === "completed") st = '<div style="color:#2d8a56;font-size:13px;">✅ 已完成 · 获得 ' + (a.getPoint !== undefined ? a.getPoint : a.basePoint) + ' 积分</div>';
         else if (a.status === "rejected") st = '<div style="color:#b73b4f;font-size:13px;">❌ 已拒绝' + (a.rejectReason ? '｜理由：' + a.rejectReason : '') + '</div>';
         else if (a.status === "cancelled") st = '<div style="color:#8a7f88;font-size:13px;">↩️ 已撤销</div>';
         else st = '<div style="color:#c2602b;font-size:13px;">⏳ 等待' + getRoleShort("admin") + '审批中…</div>';
@@ -2242,18 +2243,24 @@ async function submitTaskFinish(taskIdx) {
     if (isReadOnlyMode()) { alert("⚠️ 当前积分过低，仅查看模式，不能标记任务完成"); return; }
     const task = data.msgList[taskIdx]; if (!task) return;
     if (isTaskExpired(task)) { alert("已经过了期望时间，无法标记完成"); return; }
-    data.waitConfirmTasks.push({ text: task.text, basePoint: task.basePoint, note: task.note, originIndex: taskIdx, requester: task.requester || "admin" });
+    data.waitConfirmTasks.push({ text: task.text, basePoint: task.basePoint, note: task.note, originIndex: taskIdx, requester: task.requester || "admin", noteOwner: task.noteOwner || (task.requester === "user" ? "user" : "admin") });
     data.msgList.splice(taskIdx, 1);
     await save(); render(); alert("✅ 已标记做完，等待" + getRoleShort("admin") + "确认");
 }
 async function adminConfirmTask(confirmIdx, rate) {
     const t = data.waitConfirmTasks[confirmIdx];
     const gp = Math.round(t.basePoint * rate);
+    const ntOwner = t.noteOwner || (t.requester === "user" ? "user" : "admin");
     data.point += gp; clampPoint();
     pushPointHistory("约定完成：" + t.text + "，获得" + gp);
-    data.finishTaskHistory.push({ text: t.text, basePoint: t.basePoint, getPoint: gp, rate: rate, note: t.note, requester: t.requester || "admin", time: new Date().toISOString() });
+    data.finishTaskHistory.push({ text: t.text, basePoint: t.basePoint, getPoint: gp, rate: rate, note: t.note, requester: t.requester || "admin", noteOwner: ntOwner, time: new Date().toISOString() });
     (data.pendingTasks || []).forEach(p => {
         if (p.status === "approved" && p.text === t.text && (p.requester || "admin") === (t.requester || "admin")) {
+            p.status = "completed"; p.getPoint = gp; p.handledTime = new Date().toISOString();
+        }
+    });
+    (data.pactApplies || []).forEach(p => {
+        if (p.status === "approved" && p.text === t.text && (p.requester || "user") === (t.requester || "admin")) {
             p.status = "completed"; p.getPoint = gp; p.handledTime = new Date().toISOString();
         }
     });
@@ -2494,7 +2501,7 @@ function render() {
             const dt = new Date(msg.expireTime);
             html += "<div>期望时间：" + dt.toLocaleString() + "</div>";
         }
-        const noteOwner = msg.requester === "user" ? "user" : "admin";
+        const noteOwner = msg.noteOwner || (msg.requester === "user" ? "user" : "admin");
         if (loginState.role === noteOwner && msg.note) {
             html += '<div class="item-note">📝 私密随笔：' + msg.note + "</div>";
         }
@@ -2515,8 +2522,9 @@ function render() {
     const adminConfirmBox = document.getElementById("adminConfirmTaskList"); adminConfirmBox.innerHTML = "";
     data.waitConfirmTasks.forEach((task, idx) => {
         const div = document.createElement("div"); div.className = "item-card";
+        const ntOwner = task.noteOwner || (task.requester === "user" ? "user" : "admin");
         div.innerHTML = '<div class="msg-title">💌 待确认：' + task.text + "</div><div>积分：" + task.basePoint + "</div>" +
-            (task.note ? (task.requester === "user" ? '<div class="item-note" style="color:#9a8a92;">🔒 私密随笔仅申请人可见</div>' : '<div class="item-note">📝 随笔：' + task.note + "</div>") : "") +
+            (task.note ? (ntOwner === "admin" ? '<div class="item-note">📝 随笔：' + task.note + "</div>" : '<div class="item-note" style="color:#9a8a92;">🔒 私密随笔仅申请人可见</div>') : "") +
             '<div class="row"><button class="btn-exit" onclick="adminConfirmTask(' + idx + ',0)">0%</button><button class="btn-blue" onclick="adminConfirmTask(' + idx + ',0.5)">50%</button><button class="btn-green" onclick="adminConfirmTask(' + idx + ',1)">100%</button></div>';
         adminConfirmBox.appendChild(div);
     });
@@ -2527,8 +2535,9 @@ function render() {
     } else {
         data.finishTaskHistory.slice(0, finishShowCount).forEach(h => {
             const div = document.createElement("div"); div.className = "item-card";
+            const ntOwner = h.noteOwner || (h.requester === "user" ? "user" : "admin");
             div.innerHTML = "<div>✅ " + h.text + "</div><div>基础分：" + h.basePoint + "｜实际获得：" + h.getPoint + "｜完成度：" + (h.rate * 100) + "%</div>" +
-                (h.note ? (h.requester === "user" ? '<div class="item-note" style="color:#9a8a92;">🔒 私密随笔仅申请人可见</div>' : '<div class="item-note">📝 随笔：' + h.note + "</div>") : "");
+                (h.note ? (ntOwner === "admin" ? '<div class="item-note">📝 随笔：' + h.note + "</div>" : '<div class="item-note" style="color:#9a8a92;">🔒 私密随笔仅申请人可见</div>') : "");
             finishBox.appendChild(div);
         });
         if (data.finishTaskHistory.length > finishShowCount) {
