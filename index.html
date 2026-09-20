@@ -1756,22 +1756,7 @@ let mediaChunks = [];
 let recordingTimer = null;
 let recordStartTs = 0;
 let audioPlaying = null;
-let recAudioCtx = null;
-let recAnalyser = null;
-let maxVolume = 0;
 const VOICE_MAX_SEC = 60;
-function sampleVolume() {
-    if (!recAnalyser) return;
-    const buf = new Uint8Array(recAnalyser.fftSize);
-    recAnalyser.getByteTimeDomainData(buf);
-    let sum = 0;
-    for (let i = 0; i < buf.length; i++) {
-        const v = (buf[i] - 128) / 128;
-        sum += v * v;
-    }
-    const rms = Math.sqrt(sum / buf.length);
-    if (rms > maxVolume) maxVolume = rms;
-}
 function resetRecordBtn() {
     const btn = document.getElementById("voiceRecordBtn");
     if (btn) { btn.innerText = "🎤"; btn.style.background = ""; }
@@ -1780,7 +1765,6 @@ function resetRecordBtn() {
 function updateRecordUI() {
     const btn = document.getElementById("voiceRecordBtn");
     if (!btn) return;
-    sampleVolume();
     const sec = Math.floor((Date.now() - recordStartTs) / 1000);
     if (sec >= VOICE_MAX_SEC) { stopRecordingVoice(true); return; }
     btn.innerText = "⏹ " + sec + "s";
@@ -1803,27 +1787,23 @@ async function toggleRecordVoice() {
         return;
     }
     mediaChunks = [];
-    maxVolume = 0;
-    if (recAudioCtx) { try { recAudioCtx.close(); } catch (e) {} recAudioCtx = null; }
+    let mime = "";
+    if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) mime = "audio/webm;codecs=opus";
+    else if (MediaRecorder.isTypeSupported("audio/webm")) mime = "audio/webm";
     try {
-        recAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const srcNode = recAudioCtx.createMediaStreamSource(stream);
-        recAnalyser = recAudioCtx.createAnalyser();
-        recAnalyser.fftSize = 256;
-        srcNode.connect(recAnalyser);
-    } catch (e) { recAnalyser = null; }
-    const mime = MediaRecorder.isTypeSupported("audio/webm;codecs=opus") ? "audio/webm;codecs=opus" : "audio/webm";
-    try {
-        mediaRecorder = new MediaRecorder(stream, { mimeType: mime, audioBitsPerSecond: 48000 });
+        mediaRecorder = mime ? new MediaRecorder(stream, { mimeType: mime, audioBitsPerSecond: 48000 }) : new MediaRecorder(stream);
     } catch (e) {
-        mediaRecorder = new MediaRecorder(stream);
+        try { mediaRecorder = new MediaRecorder(stream); } catch (e2) {
+            stream.getTracks().forEach(t => t.stop());
+            alert("当前浏览器无法启动录音，请更新浏览器后重试");
+            return;
+        }
     }
     recordStartTs = Date.now();
     mediaRecorder.ondataavailable = e => { if (e.data && e.data.size > 0) mediaChunks.push(e.data); };
     mediaRecorder.onstop = () => {
         stream.getTracks().forEach(t => t.stop());
-        if (recAudioCtx) { try { recAudioCtx.close(); } catch (e) {} recAudioCtx = null; recAnalyser = null; }
-        const blobType = (mediaRecorder && mediaRecorder.mimeType) || mime;
+        const blobType = (mediaRecorder && mediaRecorder.mimeType) || mime || "audio/webm";
         mediaRecorder = null;
         clearTimeout(recordingTimer);
         const dur = Math.round((Date.now() - recordStartTs) / 1000);
@@ -1831,10 +1811,6 @@ async function toggleRecordVoice() {
         if (btn) { btn.innerText = "🎤"; btn.style.background = ""; }
         if (mediaChunks.length === 0) return;
         if (dur < 1) { alert("录音太短啦，再试一次吧"); return; }
-        if (dur > 2 && maxVolume < 0.02) {
-            alert("⚠️ 未检测到录音声音，可能麦克风被静音或不可用，已取消发送，请检查后重试");
-            return;
-        }
         const blob = new Blob(mediaChunks, { type: blobType });
         const reader = new FileReader();
         reader.onload = async () => {
@@ -1849,24 +1825,40 @@ async function toggleRecordVoice() {
     mediaRecorder.start();
     updateRecordUI();
 }
+function dataUrlToBlobUrl(base64) {
+    try {
+        const arr = String(base64).split(",");
+        const mime = ((arr[0] || "").match(/data:([^;]+)/) || [])[1] || "audio/webm";
+        const raw = atob(arr[1] || "");
+        const u8 = new Uint8Array(raw.length);
+        for (let i = 0; i < raw.length; i++) u8[i] = raw.charCodeAt(i);
+        return URL.createObjectURL(new Blob([u8], { type: mime }));
+    } catch (e) { return null; }
+}
 function toggleVoicePlay(btn, base64) {
-    if (audioPlaying && audioPlaying.src === base64) {
+    if (audioPlaying && audioPlaying._vsrc === base64) {
         audioPlaying.pause(); audioPlaying = null;
         if (btn) { btn.innerHTML = '<span class="voice-ico">▶</span><span class="voice-dur">' + btn.dataset.dur + '″</span>'; }
         return;
     }
-    if (audioPlaying) audioPlaying.pause();
-    const a = new Audio(base64);
+    if (audioPlaying) { try { audioPlaying.pause(); } catch (e) {} audioPlaying = null; }
+    const url = dataUrlToBlobUrl(base64);
+    if (!url) { alert("⚠️ 语音数据损坏，无法播放"); return; }
+    const a = new Audio(url);
+    a._vsrc = base64;
     audioPlaying = a;
     if (btn) { btn.innerHTML = '<span class="voice-ico">⏸</span><span class="voice-dur">' + btn.dataset.dur + '″</span>'; }
     const resetBtn = () => { if (btn) btn.innerHTML = '<span class="voice-ico">▶</span><span class="voice-dur">' + btn.dataset.dur + '″</span>'; };
-    a.onended = () => { audioPlaying = null; resetBtn(); };
+    const cleanup = () => { if (audioPlaying === a) audioPlaying = null; resetBtn(); };
+    a.onended = () => { try { URL.revokeObjectURL(url); } catch (e) {} cleanup(); };
     a.onerror = () => {
-        audioPlaying = null; resetBtn();
+        try { URL.revokeObjectURL(url); } catch (e) {}
+        cleanup();
         alert("⚠️ 该语音无法播放（格式不兼容），建议使用录音方的手机系统播放");
     };
-    a.play().catch(() => {
-        audioPlaying = null; resetBtn();
+    a.play().then(() => {}).catch(() => {
+        try { URL.revokeObjectURL(url); } catch (e) {}
+        cleanup();
         alert("⚠️ 播放失败，可能浏览器限制了自动播放，请再点一次");
     });
 }
@@ -1877,7 +1869,6 @@ function stopVoiceAll() {
         try { if (mediaRecorder.state === "recording") mediaRecorder.stop(); } catch (e) {}
     }
     mediaRecorder = null;
-    if (recAudioCtx) { try { recAudioCtx.close(); } catch (e) {} recAudioCtx = null; recAnalyser = null; }
     clearTimeout(recordingTimer);
     resetRecordBtn();
 }
