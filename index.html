@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="时光备忘录">
 <meta name="theme-color" content="#a86b94">
-<title>时光备忘录2.0｜Supabase云同步</title>
+<title>时光备忘录3.0｜Supabase云同步</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.1/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.6.0/dist/echarts.min.js" crossorigin="anonymous"></script>
 <style>
@@ -136,6 +136,11 @@ body.dark .quiz-opt.picked{background:#44243a;color:#f3c8de;}
 .quiz-hist-item{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-radius:8px;background:rgba(240,220,235,.25);margin-top:6px;font-size:13px;color:var(--text);}
 body.dark .quiz-hist-item{background:#33273a;}
 .quiz-hist-item .m{color:#c76aa0;font-weight:600;}
+.mood-comfort{display:inline-flex;align-items:center;gap:4px;margin-top:7px;padding:4px 13px;border-radius:999px;background:#fbeef6;border:1px solid #f0cfe2;color:#a85d80;font-size:12px;cursor:pointer;transition:all .15s;}
+.mood-comfort:hover{border-color:#d9a3c4;transform:translateY(-1px);}
+body.dark .mood-comfort{background:#44243a;border-color:#5a3a4d;color:#f3c8de;}
+.comfort-done{display:inline-block;margin-top:7px;font-size:12px;color:#9a8a92;}
+body.dark .comfort-done{color:#cbb8c4;}
 .chat-head{font-size:11px;color:#9a8496;margin-bottom:4px;display:block;}
 .chat-bubble.me .chat-head{color:#f0d6e6;}
 .login-box{padding:28px 10px;text-align:center;}
@@ -231,7 +236,7 @@ body.dark [style*="#6347a2"]{color:#d0b6f0!important;}
 <div class="container">
 <!-- 房间选择页 -->
 <div id="roomPage" class="room-box">
-<h1>✨时光备忘录2.0</h1>
+<h1>✨时光备忘录3.0</h1>
 <p class="room-sub">双人云同步备忘录 · Supabase</p>
 <div id="cloudCreateArea">
 <div class="btn-row"><button class="btn-purple" onclick="createNewRoom()">➕ 创建新双人房间</button></div>
@@ -257,7 +262,7 @@ body.dark [style*="#6347a2"]{color:#d0b6f0!important;}
 
 <!-- 登录页 -->
 <div id="loginPage" class="login-box hide">
-<h1>✨时光备忘录2.0</h1>
+<h1>✨时光备忘录3.0</h1>
 <p style="color:var(--text-sub);margin-bottom:24px;font-size:14px">输入账号密码进入</p>
 <p id="rememberTip" class="hide" style="font-size:12px;color:#94848c;margin:-10px 0 14px;text-align:center;">💾 已记住上次登录密码，可直接点进入</p>
 <div class="field" style="text-align:left;"><label>🔑 登录密码</label><input type="password" id="pwdInput" placeholder="请输入登录密码" autocomplete="off"></div>
@@ -279,7 +284,7 @@ body.dark [style*="#6347a2"]{color:#d0b6f0!important;}
 <span class="sync-info" style="flex:1 1 0;">🏠 房间码 <span id="showRoomId" style="font-weight:600;color:#a474bd;">无</span></span>
 <button class="btn-exit" onclick="leaveRoom()">🚪 退出房间</button>
 </div>
-<h1>✨时光备忘录2.0</h1>
+<h1>✨时光备忘录3.0</h1>
 <div id="lowPointWarn" class="warn-low hide">⚠️ 当前积分低于-100，仅查看模式，无法兑换商品、标记任务完成</div>
 <div class="info-card">
 <h3 style="display:flex;justify-content:space-between;align-items:center;"><span>❤️ 纪念日</span><span id="annivAddBtn" class="quiz-add" onclick="toggleAnnivAdd()">＋ 添加纪念日</span></h3>
@@ -447,6 +452,14 @@ body.dark [style*="#6347a2"]{color:#d0b6f0!important;}
 <button class="btn-purple" onclick="toggleHide('annivCelebrateModal')">✅ 知道啦</button>
 </div>
 </div>
+<!-- 安慰提醒弹窗 -->
+<div id="comfortTipModal" class="level-modal hide">
+<div class="level-modal-box" style="text-align:center;padding:30px 24px;">
+<div style="font-size:46px;">🫂</div>
+<div id="comfortTipText" class="level-up-title" style="margin-top:12px;white-space:pre-line;"></div>
+<button class="btn-purple" onclick="toggleHide('comfortTipModal')">✅ 知道啦</button>
+</div>
+</div>
 
 <!-- 修改昵称弹窗 -->
 <div id="nickModal" class="level-modal hide">
@@ -590,6 +603,7 @@ function ensureDataFields(d) {
     if (!d.annivCelebrated) d.annivCelebrated = {};
     if (!d.quizDaily) d.quizDaily = { date: "", qIdx: 0, answers: {} };
     if (!d.quizRecords) d.quizRecords = [];
+    if (!d.comfortNotices) d.comfortNotices = [];
     // 数据迁移：历史已确认完成（finishTaskHistory）但申请记录仍停留在 approved 的，标记为 completed
     if (Array.isArray(d.finishTaskHistory) && Array.isArray(d.pendingTasks) && d.finishTaskHistory.length > 0) {
         d.pendingTasks.forEach(p => {
@@ -1396,7 +1410,14 @@ function renderMoodList() {
         const lvIcon = key === "admin" ? "👑" : getLevelIcons(data.point);
         const emoji = MOOD_EMOJI[item.mood] || "💭";
         const name = item.role || getRoleName(key);
-        d.innerHTML = '<div><b style="color:#7d4a68;">' + lvIcon + " " + name + '</b> · ' + item.time + ' · <b>' + emoji + " " + item.mood + "</b></div>" + (item.note ? '<div style="margin-top:4px;color:#7c6c74;">' + item.note + "</div>" : "");
+        let inner = '<div><b style="color:#7d4a68;">' + lvIcon + " " + name + '</b> · ' + item.time + ' · <b>' + emoji + " " + item.mood + "</b></div>" + (item.note ? '<div style="margin-top:4px;color:#7c6c74;">' + item.note + "</div>" : "");
+        if (key !== loginState.role && !item.comforted) {
+            const idx = data.moodList.indexOf(item);
+            inner += '<div><button class="mood-comfort" onclick="comfortMood(' + idx + ')">🫂 安慰 TA</button></div>';
+        } else if (item.comforted) {
+            inner += '<div class="comfort-done">🫂 已收到安慰' + (item.comfortByRoleName ? "（" + item.comfortByRoleName + "）" : "") + '</div>';
+        }
+        d.innerHTML = inner;
         w.appendChild(d);
     });
     if (data.moodList.length > moodShowCount) {
@@ -2610,6 +2631,7 @@ function getPartnerNegativeMood() {
     for (const m of list) {
         const rk = moodRoleKey(m);
         if (rk === me) continue;
+        if (m.comforted) continue;
         if (NEGATIVE_MOODS.indexOf(m.mood) < 0) continue;
         const t = m.ts ? new Date(m.ts) : new Date(m.time);
         if (isNaN(t.getTime())) continue;
@@ -2617,6 +2639,38 @@ function getPartnerNegativeMood() {
         return m;
     }
     return null;
+}
+async function comfortMood(idx) {
+    if (!loginState.isLogin) return;
+    const m = (data.moodList || [])[idx];
+    if (!m || m.comforted) return;
+    if (moodRoleKey(m) === loginState.role) return;
+    if (!submitGuard("comfortMood", 1500)) return;
+    m.comforted = true;
+    m.comfortBy = loginState.role;
+    m.comfortByRoleName = getRoleName(loginState.role);
+    m.comfortTime = new Date().toLocaleString();
+    const nowTs = Date.now();
+    if (!data.comfortNotices) data.comfortNotices = [];
+    data.comfortNotices.push({
+        to: moodRoleKey(m), from: loginState.role, fromName: getRoleName(loginState.role),
+        mood: m.mood, time: new Date(nowTs).toLocaleString(), ts: nowTs, read: false
+    });
+    await save(); render();
+    alert("🫂 已安慰 TA，TA 打开时会收到你的安慰弹窗～");
+}
+function checkComfortNotify() {
+    if (!loginState.isLogin) return;
+    const list = data.comfortNotices || [];
+    const mine = list.filter(n => n.to === loginState.role && !n.read);
+    if (!mine.length) return;
+    const n = mine[mine.length - 1];
+    n.read = true;
+    const txt = document.getElementById("comfortTipText");
+    const modal = document.getElementById("comfortTipModal");
+    if (txt) txt.innerText = "💌 " + n.fromName + " 安慰了你\n看到你「" + n.mood + "」的小情绪，TA 想抱抱你～";
+    if (modal) modal.classList.remove("hide");
+    save();
 }
 function renderCheerBanner() {
     const b = document.getElementById("cheerBanner");
@@ -3003,6 +3057,7 @@ function render() {
     data.point < 0 ? pointDom.classList.add("negative-point") : pointDom.classList.remove("negative-point");
     calcTaskStat(); renderMoodList(); renderInstantMessages(); renderShop();
     renderAnniv(); renderCheerBanner(); renderQuiz();
+    checkComfortNotify();
     const applyArea = document.getElementById("userTaskApplyArea");
     if (loginState.role === "user") { applyArea.classList.remove("hide"); renderMyPendingList(); }
     else { applyArea.classList.add("hide"); }
