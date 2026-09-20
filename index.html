@@ -2346,8 +2346,10 @@ function countMsgsInHours(hStart, hEnd) {
     });
     return c;
 }
+/* 陪伴类徽章起始日（指定从 2026-09-19 起计算使用天数；如需改回房间创建时间，把值改为 0 即可） */
+const FORCED_CREATE = new Date("2026/09/19 00:00:00").getTime();
 function daysUsed() {
-    const t0 = data.createTime || Date.now();
+    const t0 = FORCED_CREATE || data.createTime || Date.now();
     return Math.max(0, Math.floor((Date.now() - t0) / 86400000));
 }
 function badgeTier(b) {
