@@ -1411,11 +1411,11 @@ function renderMoodList() {
         const emoji = MOOD_EMOJI[item.mood] || "💭";
         const name = item.role || getRoleName(key);
         let inner = '<div><b style="color:#7d4a68;">' + lvIcon + " " + name + '</b> · ' + item.time + ' · <b>' + emoji + " " + item.mood + "</b></div>" + (item.note ? '<div style="margin-top:4px;color:#7c6c74;">' + item.note + "</div>" : "");
-        if (key !== loginState.role && !item.comforted) {
+        if (key !== loginState.role && !item.comforted && NEGATIVE_MOODS.indexOf(item.mood) >= 0) {
             const idx = data.moodList.indexOf(item);
-            inner += '<div><button class="mood-comfort" onclick="comfortMood(' + idx + ')">🫂 安慰 TA</button></div>';
+            inner += '<div style="text-align:right;"><button class="mood-comfort" onclick="comfortMood(' + idx + ')">🫂 安慰 TA</button></div>';
         } else if (item.comforted) {
-            inner += '<div class="comfort-done">🫂 已收到安慰' + (item.comfortByRoleName ? "（" + item.comfortByRoleName + "）" : "") + '</div>';
+            inner += '<div class="comfort-done" style="text-align:right;">🫂 已收到安慰' + (item.comfortByRoleName ? "（" + item.comfortByRoleName + "）" : "") + '</div>';
         }
         d.innerHTML = inner;
         w.appendChild(d);
