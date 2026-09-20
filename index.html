@@ -230,6 +230,59 @@ body.dark [style*="#c2602b"]{color:#ffb066!important;}
 body.dark [style*="#e8a33d"]{color:#ffc26e!important;}
 body.dark [style*="#c48744"]{color:#ffc26e!important;}
 body.dark [style*="#6347a2"]{color:#d0b6f0!important;}
+/* ===== UI 3.0 精致化补丁 ===== */
+/* 输入控件：更圆润 + 悬停反馈 + 自定义下拉箭头 */
+input,textarea,select{border-radius:14px;}
+input:hover,textarea:hover,select:hover{border-color:#d9b5d2;}
+body.dark input:hover,body.dark textarea:hover,body.dark select:hover{background-color:#40324a;}
+select{appearance:none;-webkit-appearance:none;-moz-appearance:none;background-image:url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23a86b94' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 13px center;padding-right:36px;cursor:pointer;}
+body.dark select{background-image:url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23d9a8c8' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");}
+/* 按钮：统一圆角、字距、顶部高光、按压反馈 */
+button{border-radius:14px;letter-spacing:.3px;position:relative;overflow:hidden;}
+button::after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 28% 18%,rgba(255,255,255,.32),transparent 55%);opacity:0;transition:opacity .22s ease;pointer-events:none;}
+button:hover::after{opacity:.45;}
+.btn-exit,.btn-blue,.btn-green,.btn-red,.btn-orange,.btn-purple{box-shadow:0 5px 14px rgba(168,107,148,.2),inset 0 1px 0 rgba(255,255,255,.18);}
+.btn-sm{border-radius:12px;}
+.btn-more{border-radius:999px;}
+/* 复选框美化 */
+input[type="checkbox"]{appearance:none;-webkit-appearance:none;width:20px;height:20px;flex:0 0 auto;border:1.5px solid #d9b5d2;border-radius:6px;background:#fff;cursor:pointer;position:relative;transition:all .18s ease;padding:0;}
+input[type="checkbox"]:checked{background:var(--grad-main);border-color:transparent;}
+input[type="checkbox"]:checked::after{content:"✓";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:700;}
+body.dark input[type="checkbox"]{background:#3a2d42;border-color:#7a5a70;}
+/* 徽章墙：更圆润 + 解锁光晕 */
+.badge-cell{border-radius:14px;padding:12px 4px;transition:transform .18s ease,box-shadow .2s ease;}
+.badge-cell.got{border-color:rgba(216,160,202,.6);}
+.badge-cell.got .badge-cell-icon{filter:drop-shadow(0 2px 5px rgba(196,120,168,.35));}
+.badge-cell-name{letter-spacing:.2px;}
+/* 全局滚动条 */
+::-webkit-scrollbar{width:8px;height:8px;}
+::-webkit-scrollbar-thumb{background:rgba(168,107,148,.32);border-radius:8px;}
+::-webkit-scrollbar-thumb:hover{background:rgba(168,107,148,.5);}
+::-webkit-scrollbar-track{background:transparent;}
+/* 列表项悬浮微效 */
+.record-item,.anniv-custom-item,.mood-item,.shop-item{transition:transform .15s ease,box-shadow .2s ease,background .2s ease;}
+.record-item:hover{transform:translateX(2px);box-shadow:0 4px 12px rgba(168,107,148,.12);}
+.mood-item:hover,.shop-item:hover{transform:translateY(-1px);box-shadow:0 5px 14px rgba(168,107,148,.13);}
+/* 弹窗按钮宽度统一 */
+.level-modal-box .btn-purple,.level-modal-box .btn-red,.level-modal-box .btn-exit,.level-modal-box .btn-blue{min-width:130px;margin-top:8px;}
+/* 消息气泡精修 */
+.chat-bubble{box-shadow:0 4px 14px rgba(168,107,148,.16);}
+.chat-bubble.me{background:linear-gradient(135deg,#b47ba1,#8f5a8c);box-shadow:0 4px 14px rgba(143,90,140,.28);}
+.chat-bubble.other{box-shadow:0 3px 10px rgba(168,107,148,.1);}
+/* 标签统一药丸形 */
+.tag{border-radius:999px;padding:4px 11px;font-weight:500;}
+/* 统计数字增强 */
+.stat-item b{font-size:19px;letter-spacing:.5px;}
+/* 深色模式补充细节 */
+body.dark .btn-more{background:linear-gradient(135deg,#4a3550,#3d2c42);color:#e2c4d8;border-color:#5a3a4d;}
+body.dark .badge-cell{background:#33273a;}
+body.dark .stat-item{background:linear-gradient(160deg,#332838,#2c2332);}
+body.dark .tag-imp{background:#4a2730;color:#ff9aab;}
+body.dark .tag-norm{background:#46301f;color:#ffb066;}
+body.dark .tag-casual{background:#1e3a2c;color:#7fe6b2;}
+body.dark .tag-wait{background:#332a4a;color:#c9adea;}
+body.dark .online-toast{background:rgba(0,0,0,.75);}
+body.dark .badge-unlock-item{background:#33273a;color:var(--text-main);}
 </style>
 </head>
 <body>
