@@ -931,6 +931,19 @@ function leaveRoom() {
     backToRoomPage();
 }
 
+/* ---------------- 提交防抖（网络慢时防重复提交） ---------------- */
+let lastSubmitTs = {};
+function submitGuard(key, gapMs) {
+    const now = Date.now();
+    const gap = gapMs || 1500;
+    if (lastSubmitTs[key] && now - lastSubmitTs[key] < gap) {
+        alert("⏳ 操作太快啦，请稍候再试");
+        return false;
+    }
+    lastSubmitTs[key] = now;
+    return true;
+}
+
 /* ---------------- 业务逻辑 ---------------- */
 function getLevel(pts) { return Math.floor((pts || 0) / 20) + 1; }
 function getLevelIcons(pts) {
@@ -992,6 +1005,7 @@ async function submitPointTask() {
     const t = document.getElementById("applyTaskText").value.trim();
     const note = document.getElementById("applyTaskNote").value.trim();
     if (!t) { alert("请填写申请的事项内容"); return; }
+    if (!submitGuard("taskApply")) return;
     data.pendingTasks.push({ text: t, note: note, requester: "user", status: "pending", time: new Date().toLocaleString() });
     await save(); render();
     document.getElementById("applyTaskText").value = "";
@@ -1234,6 +1248,7 @@ async function submitShopApply() {
     const n = document.getElementById("shopApplyName").value.trim();
     const dsc = document.getElementById("shopApplyDesc").value.trim();
     if (!n) { alert("请填写想兑换的物品名称"); return; }
+    if (!submitGuard("shopApply")) return;
     data.shopApplies.unshift({ text: n, desc: dsc, requester: "user", status: "pending", time: new Date().toLocaleString() });
     await save(); render();
     document.getElementById("shopApplyName").value = "";
@@ -1476,6 +1491,7 @@ async function applyReturn(recIdx) {
     }
     const note = prompt("填写退货原因（可选）：", "");
     if (note === null) return;
+    if (!submitGuard("returnApply")) return;
     data.returnApplies.push({ goodsName: rec.goodsName, cost: rec.cost, qty: rec.qty || 1, total: rec.cost, time: rec.time, reqTime: new Date().toLocaleString(), status: "pending", requester: loginState.role, note: note.trim() });
     await save(); render();
     alert("✅ 退货申请已提交，等待" + getRoleShort("admin") + "确认");
