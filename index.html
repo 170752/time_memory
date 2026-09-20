@@ -123,6 +123,9 @@ body.dark .anniv-custom-item{background:#33273a;color:#e2c8dc;}
 .quiz-add{font-size:12px;color:#a86b94;cursor:pointer;font-weight:600;}
 .quiz-add:hover{color:#c487aa;}
 body.dark .quiz-add{color:#d9a3c4;}
+.quiz-edit-btn{display:inline-flex;align-items:center;gap:3px;margin-top:6px;padding:3px 11px;border-radius:999px;background:rgba(168,107,148,.08);border:1px solid rgba(168,107,148,.22);color:#a86b94;font-size:11px;cursor:pointer;transition:all .15s;font-weight:600;letter-spacing:.3px;}
+.quiz-edit-btn:hover{border-color:#d9a3c4;background:rgba(168,107,148,.15);transform:translateY(-1px);}
+body.dark .quiz-edit-btn{background:rgba(217,168,200,.1);border-color:#5a3a4d;color:#d9a3c4;}
 .quiz-streak-tip{font-size:12px;color:#a86b94;font-weight:600;}
 body.dark .quiz-streak-tip{color:#d9a3c4;}
 .quiz-box{text-align:center;padding:6px 2px;}
@@ -511,6 +514,17 @@ body.dark .badge-unlock-item{background:#33273a;color:var(--text-main);}
 <div style="font-size:46px;">🫂</div>
 <div id="comfortTipText" class="level-up-title" style="margin-top:12px;white-space:pre-line;"></div>
 <button class="btn-purple" onclick="toggleHide('comfortTipModal')">✅ 知道啦</button>
+</div>
+</div>
+<!-- 默契问答改题弹窗 -->
+<div id="quizEditModal" class="level-modal hide">
+<div class="level-modal-box" style="width:min(400px,92%);text-align:left;">
+<div class="level-up-title" style="text-align:center;">✏️ 修改今日题目</div>
+<div class="field"><label>题目</label><input type="text" id="quizEditQ" maxlength="30" placeholder="想考考 TA 的问题"></div>
+<div class="field"><label>选项 A</label><input type="text" id="quizEditA" maxlength="16" placeholder="选项 A"></div>
+<div class="field"><label>选项 B</label><input type="text" id="quizEditB" maxlength="16" placeholder="选项 B"></div>
+<div class="btn-row"><button class="btn-purple" onclick="saveQuizEdit()">✅ 发布新题</button><button class="btn-exit" onclick="toggleHide('quizEditModal')">取消</button></div>
+<p class="field-hint">发布后双方都会刷新为新题目，需要重新作答；今日已答的记录将作废。</p>
 </div>
 </div>
 
@@ -2854,7 +2868,34 @@ function getTodayQuiz() {
         const idx = Math.floor((Date.now() - t0) / 86400000) % QUIZ_BANK.length;
         data.quizDaily = { date: todayStr(), qIdx: idx, answers: {} };
     }
+    const c = data.quizDaily.custom;
+    if (c && c.q && c.a && c.b) return { q: c.q, a: c.a, b: c.b };
     return QUIZ_BANK[data.quizDaily.qIdx];
+}
+function openQuizEdit() {
+    if (loginState.role !== "admin") return;
+    const q = getTodayQuiz();
+    document.getElementById("quizEditQ").value = q.q;
+    document.getElementById("quizEditA").value = q.a;
+    document.getElementById("quizEditB").value = q.b;
+    document.getElementById("quizEditModal").classList.remove("hide");
+}
+async function saveQuizEdit() {
+    if (loginState.role !== "admin") return;
+    if (!submitGuard("quizEdit", 1500)) return;
+    const q = document.getElementById("quizEditQ").value.trim();
+    const a = document.getElementById("quizEditA").value.trim();
+    const b = document.getElementById("quizEditB").value.trim();
+    if (!q || !a || !b) { alert("题目和两个选项都要填写哦"); return; }
+    getTodayQuiz();
+    data.quizDaily.custom = { q: q, a: a, b: b };
+    data.quizDaily.answers = {};
+    delete data.quizDaily.doneAt;
+    const today = todayStr();
+    data.quizRecords = (data.quizRecords || []).filter(r => r.date !== today);
+    document.getElementById("quizEditModal").classList.add("hide");
+    await save(); render();
+    alert("✅ 新题目已发布，双方将同步刷新，快去选一个答案吧～");
 }
 function quizStreak() {
     const set = new Set((data.quizRecords || []).filter(r => r.match && r.date).map(r => r.date));
@@ -2902,6 +2943,9 @@ function renderQuiz() {
         html += '<button class="quiz-opt" onclick="answerQuiz(0)">' + q.a + '</button><button class="quiz-opt" onclick="answerQuiz(1)">' + q.b + '</button>';
     }
     box.innerHTML = html;
+    if (loginState.role === "admin") {
+        box.innerHTML += '<div style="text-align:right;"><button class="quiz-edit-btn" onclick="openQuizEdit()">✏️ 改题</button></div>';
+    }
     const st = document.getElementById("quizStreakTip");
     if (st) {
         const streak = quizStreak();
@@ -2913,7 +2957,7 @@ async function answerQuiz(opt) {
     if (!loginState.isLogin) return;
     getTodayQuiz();
     data.quizDaily.answers[loginState.role] = opt;
-    const q = QUIZ_BANK[data.quizDaily.qIdx];
+    const q = getTodayQuiz();
     const ans = data.quizDaily.answers;
     const a = ans.admin, u = ans.user;
     let bothDone = false;
