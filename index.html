@@ -3479,6 +3479,17 @@ window.addEventListener("load", function () {
     }
 });
 </script>
+<script>
+/* 版本自检守护：若主脚本因浏览器/CDN 缓存到旧版本而未能执行，自动带参数重载绕过缓存，免去手动清除数据 */
+setTimeout(function () {
+    try {
+        if (typeof cloudMode === "undefined" && !sessionStorage.getItem("tm_ver_guard")) {
+            sessionStorage.setItem("tm_ver_guard", "1");
+            location.replace(location.pathname + "?v=" + Date.now());
+        }
+    } catch (e) {}
+}, 1500);
+</script>
 <button id="themeToggle" onclick="toggleTheme()" ondblclick="restoreAutoTheme()" title="点击手动切换深浅色｜双击恢复自动（白天浅色/夜晚深色）" style="position:fixed;bottom:18px;right:18px;z-index:999;width:46px;height:46px;border-radius:50%;font-size:20px;background:var(--grad-main);box-shadow:0 6px 18px rgba(168,107,148,.35);border:2px solid rgba(255,255,255,.5);">🌙</button>
 </body>
 </html>
