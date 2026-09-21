@@ -2050,17 +2050,16 @@ function toggleEmojiPanel() {
     EMOJI_SET.forEach(e => {
         const b = document.createElement("button");
         b.innerText = e;
-        b.onclick = function () { sendEmojiMsg(e); };
+        b.onclick = function () { pickEmoji(e); };
         p.appendChild(b);
     });
     p.classList.remove("hide");
 }
-async function sendEmojiMsg(e) {
-    const nowTs = Date.now();
-    const msg = { role: loginState.role, roleName: getRoleName(loginState.role), text: e, time: new Date(nowTs).toLocaleString(), ts: nowTs };
-    saveChatMessage(msg);
-    document.getElementById("emojiPanel").classList.add("hide");
-    await save(); render();
+function pickEmoji(e) {
+    const inp = document.getElementById("instantMsgInput");
+    if (!inp) return;
+    inp.value += e;
+    inp.focus();
 }
 function stopVoiceAll() {
     if (audioPlaying) { try { audioPlaying.pause(); } catch (e) {} audioPlaying = null; }
@@ -2957,11 +2956,7 @@ function quizStreak() {
     return best;
 }
 function quizQText(q) {
-    const me = loginState.role;
-    const other = me === "admin" ? "user" : "admin";
-    const g = (data.gender && data.gender[other]) || (other === "admin" ? "男" : "女");
-    const label = g === "女" ? "她" : "他";
-    return String(q.q).replace(/对方/g, label);
+    return String(q.q);
 }
 function renderQuizHistory() {
     const w = document.getElementById("quizHistory");
