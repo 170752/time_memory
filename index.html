@@ -894,7 +894,8 @@ async function joinExistRoom() {
     try {
         const res = await supabase.from("love_rooms").select("*").eq("id", rid).single();
         roomRow = res.data;
-        if (res.error || !roomRow) { alert("房间不存在，请检查房间码"); return; }
+        if (res.error) { alert("⚠️ 云端查询失败：" + res.error.message + "\n请检查手机网络后重试"); return; }
+        if (!roomRow) { alert("❌ 房间不存在，请检查房间码是否输入正确（当前输入：" + rid + "）"); return; }
     } catch (err) {
         alert("无法连接云端服务：" + err.message);
         return;
