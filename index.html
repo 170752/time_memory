@@ -1932,10 +1932,8 @@ function renderInstantMessages() {
         head.innerText = lvIcon + " " + (m.roleName || getRoleName(m.role)) + " " + (m.time || "");
         const body = document.createElement("div");
         bubble.appendChild(head); bubble.appendChild(body);
-        if (m.recalled) {
-            bubble.classList.add("recalled");
-            body.innerText = (isMe ? "你撤回了一条消息" : "对方撤回了一条消息");
-        } else if (m.voice) {
+        if (m.recalled) { return; } /* 已撤回的消息不再显示在聊天记录中 */
+        if (m.voice) {
             const vb = document.createElement("button");
             vb.className = "voice-bar";
             vb.dataset.dur = m.voiceDur || "";
@@ -1960,14 +1958,15 @@ function renderInstantMessages() {
     wrap.scrollTop = wrap.scrollHeight;
 }
 async function recallMsg(idx) {
-    const m = (data.messages || [])[idx];
+    const arr = data.messages || [];
+    const m = arr[idx];
     if (!m || m.role !== loginState.role) return;
     if (m.recalled) return;
     const age = Date.now() - (m.ts ? m.ts : new Date(m.time).getTime());
     if (isNaN(age) || age < 0 || age > 60000) { alert("⏱️ 仅可撤回发送 1 分钟内的消息"); return; }
-    m.recalled = true; m.text = ""; m.voice = ""; m.voiceDur = 0;
+    arr.splice(idx, 1); /* 撤回即彻底删除，聊天记录中不再保留 */
     await save(); render();
-    alert("✅ 已撤回");
+    alert("✅ 已撤回，消息已从聊天记录中删除");
 }
 function saveChatMessage(msg) {
     if (!data.messages) data.messages = [];
