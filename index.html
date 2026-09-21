@@ -910,6 +910,9 @@ async function joinExistRoom() {
     const rid = document.getElementById("joinRoomCode").value.trim().toUpperCase();
     const rpass = document.getElementById("joinRoomPass").value.trim();
     if (!rid || !rpass) { alert("请填写房间码和访问密钥"); return; }
+    // 记住输入的房间码和密钥（即使网络失败也保留，下次进来直接重试）
+    localStorage.setItem("loveRoomId", rid);
+    localStorage.setItem("loveRoomPass", rpass);
     let roomRow;
     try {
         const res = await retryQuery(function () { return supabase.from("love_rooms").select("*").eq("id", rid).single(); }, 3, 1000);
