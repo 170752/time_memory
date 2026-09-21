@@ -123,7 +123,9 @@ body.dark .anniv-bar{background:#3a2534;border-color:#5a3a4d;color:#f3c8de;}
 body.dark .anniv-custom-item{background:#33273a;color:#e2c8dc;}
 .pass-wrap{position:relative;}
 .pass-wrap input{width:100%;padding-right:46px;}
-.pass-eye{position:absolute;right:3px;top:50%;transform:translateY(-50%);width:38px;height:38px;border:none;background:none;box-shadow:none;font-size:17px;line-height:1;cursor:pointer;border-radius:50%;padding:0;color:#a86b94;opacity:.8;transition:all .15s;}
+.pass-eye{position:absolute;right:2px;top:50%;transform:translateY(-50%);width:40px;height:40px;display:flex;align-items:center;justify-content:center;border:none;background:none;box-shadow:none;cursor:pointer;border-radius:50%;padding:0;color:#a86b94;opacity:.85;line-height:1;transition:background .15s,opacity .15s;}
+.pass-eye svg{display:block;flex:0 0 auto;}
+.pass-eye:active{transform:translateY(-50%) scale(.9);}
 .pass-eye:hover{opacity:1;background:rgba(168,107,148,.1);}
 body.dark .pass-eye{color:#d9a8c8;}
 body.dark .pass-eye:hover{background:rgba(217,168,200,.12);}
@@ -320,7 +322,7 @@ body.dark .badge-unlock-item{background:#33273a;color:var(--text-main);}
 <div class="btn-row"><button class="btn-green" onclick="pasteRoomInfo()">📋 一键粘贴房间信息</button></div>
 <p class="field-hint" style="text-align:center;">先复制对方发来的「房间码+访问密钥」，点此按钮自动填入下方</p>
 <div class="field"><label>🏷️ 房间配对码</label><input type="text" id="joinRoomCode" placeholder="输入6位房间码" autocomplete="off"></div>
-<div class="field"><label>🔒 房间访问密钥</label><div class="pass-wrap"><input type="password" id="joinRoomPass" placeholder="输入访问密钥" autocomplete="off"><button type="button" class="pass-eye" onclick="togglePassShow('joinRoomPass', this)" title="点击显示/隐藏密钥">👁</button></div></div>
+<div class="field"><label>🔒 房间访问密钥</label><div class="pass-wrap"><input type="password" id="joinRoomPass" placeholder="输入访问密钥" autocomplete="off"><button type="button" class="pass-eye" id="joinPassEye" onclick="togglePassShow('joinRoomPass', this)" title="点击显示/隐藏密钥"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>
 <div class="btn-row"><button class="btn-blue" onclick="joinExistRoom()">🚪 加入已有房间</button></div>
 </div>
 <div class="btn-row" style="margin-top:14px;"><button class="btn-exit" onclick="enterLocalMode()">📂 本地模式（无云同步）</button></div>
@@ -1422,11 +1424,15 @@ async function unlockRecordMinus() {
     clampPoint(); await save(); render();
     alert("✅ 已解锁全部减分记录，永久可见");
 }
+const EYE_OPEN_SVG = '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+const EYE_CLOSED_SVG = '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
 function togglePassShow(id, btn) {
     const inp = document.getElementById(id);
     if (!inp) return;
-    if (inp.type === "password") { inp.type = "text"; btn.innerText = "🙈"; }
-    else { inp.type = "password"; btn.innerText = "👁"; }
+    const show = inp.type === "password";
+    inp.type = show ? "text" : "password";
+    btn.innerHTML = show ? EYE_CLOSED_SVG : EYE_OPEN_SVG;
+    btn.title = show ? "点击隐藏密钥" : "点击显示密钥";
 }
 function toggleHide(id) { document.getElementById(id).classList.toggle("hide"); }
 function doResetPassword() {
