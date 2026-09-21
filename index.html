@@ -622,7 +622,15 @@ let cloudMode = false;
 let supabase = null;
 try {
     if (SUPABASE_URL && SUPABASE_ANON_KEY && window.supabase) {
-        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            global: {
+                fetch: function (url, opts) {
+                    const ctl = new AbortController();
+                    const t = setTimeout(function () { ctl.abort(); }, 15000);
+                    return fetch(url, Object.assign({}, opts, { signal: ctl.signal })).finally(function () { clearTimeout(t); });
+                }
+            }
+        });
         cloudMode = true;
     }
 } catch (e) {
@@ -632,6 +640,16 @@ try {
 
 let currentRoomId = null;
 let currentRoomPasscode = null;
+/* 网络不稳定时的自动重试：最多 tries 次，间隔递增 */
+async function retryQuery(fn, tries, delayMs) {
+    let res;
+    for (let i = 0; i < tries; i++) {
+        try { res = await fn(); } catch (e) { res = { error: e }; }
+        if (res && !res.error) return res;
+        if (i < tries - 1) await new Promise(function (r) { setTimeout(r, delayMs * (i + 1)); });
+    }
+    return res;
+}
 let realtimeChannel = null;
 let localRoomVersion = 0;
 let tempCreateRoomId = null;
@@ -894,7 +912,7 @@ async function joinExistRoom() {
     if (!rid || !rpass) { alert("请填写房间码和访问密钥"); return; }
     let roomRow;
     try {
-        const res = await supabase.from("love_rooms").select("*").eq("id", rid).single();
+        const res = await retryQuery(function () { return supabase.from("love_rooms").select("*").eq("id", rid).single(); }, 3, 1000);
         roomRow = res.data;
         if (res.error) { alert("⚠️ 云端查询失败：" + res.error.message + "\n\n👉 若连WiFi时出现：\n1. 先切移动数据试试（一般能通）\n2. 或在WiFi设置里把DNS改为 223.5.5.5 / 114.114.114.114\n3. 或在路由器后台把DNS改成 223.5.5.5"); return; }
         if (!roomRow) { alert("❌ 房间不存在，请检查房间码是否输入正确（当前输入：" + rid + "）"); return; }
@@ -1061,7 +1079,7 @@ function showOnlineTip(name, online) {
 async function loadCloudRoomData() {
     if (!cloudMode || !currentRoomId) return false;
     try {
-        const res = await supabase.from("love_rooms").select("*").eq("id", currentRoomId).single();
+        const res = await retryQuery(function () { return supabase.from("love_rooms").select("*").eq("id", currentRoomId).single(); }, 3, 1000);
         if (res.error || !res.data) { return false; }
         const roomRow = res.data;
         localRoomVersion = roomRow.version;
