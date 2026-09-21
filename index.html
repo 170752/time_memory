@@ -144,6 +144,11 @@ body.dark .quiz-hist-item{background:#33273a;}
 body.dark .mood-comfort{background:#44243a;border-color:#5a3a4d;color:#f3c8de;}
 .comfort-done{display:inline-block;margin-top:7px;font-size:12px;color:#9a8a92;}
 body.dark .comfort-done{color:#cbb8c4;}
+.emoji-panel{display:grid;grid-template-columns:repeat(9,1fr);gap:2px;background:var(--card-bg);border:1px solid var(--border);border-radius:16px;padding:8px 6px;margin-bottom:8px;box-shadow:var(--shadow-item);max-height:190px;overflow-y:auto;}
+.emoji-panel button{font-size:21px;line-height:1;padding:5px 0;background:none;border:none;border-radius:9px;box-shadow:none;height:auto;min-height:0;color:inherit;}
+.emoji-panel button:hover{background:#fbeef6;transform:scale(1.12);}
+body.dark .emoji-panel{background:#2a2130;border-color:var(--border);}
+body.dark .emoji-panel button:hover{background:#3a2d42;}
 .chat-head{font-size:11px;color:#9a8496;margin-bottom:4px;display:block;}
 .chat-bubble.me .chat-head{color:#f0d6e6;}
 .login-box{padding:28px 10px;text-align:center;}
@@ -359,7 +364,8 @@ body.dark .badge-unlock-item{background:#33273a;color:var(--text-main);}
 <h3 style="display:flex;justify-content:space-between;align-items:center;"><span>💬 即时消息<span id="msgUnreadBadge" class="secret-badge hide" onclick="markMsgRead()" style="cursor:pointer;">0</span><span id="onlineBadge" class="online-badge offline">⚪ 好友离线</span></span><button class="btn-purple btn-sm" onclick="openSecretModal()">💌 悄悄话<span id="secretBadge" class="secret-badge hide">0</span></button></h3>
 <div id="cheerBanner" class="cheer-banner hide" onclick="focusChatInput()"><span id="cheerText"></span></div>
 <div id="instantMsgList" class="msg-list"></div>
-<div class="row" style="margin-bottom:0;"><button id="voiceRecordBtn" class="btn-blue" style="flex:0 0 auto;width:52px;font-size:16px;" onclick="toggleRecordVoice()" title="🎤 语音留言（最长60秒，点击开始/结束）">🎤</button><input type="text" id="instantMsgInput" class="grow" placeholder="写句话发给伙伴，或点🎤语音留言" autocomplete="off"><button class="btn-purple" onclick="sendInstantMsg()">📤 发送</button></div>
+<div id="emojiPanel" class="emoji-panel hide"></div>
+<div class="row" style="margin-bottom:0;"><button id="voiceRecordBtn" class="btn-blue" style="flex:0 0 auto;width:52px;font-size:16px;" onclick="toggleRecordVoice()" title="🎤 语音留言（最长60秒，点击开始/结束）">🎤</button><button id="emojiBtn" class="btn-blue" style="flex:0 0 auto;width:52px;font-size:16px;" onclick="toggleEmojiPanel()" title="😊 发送表情">😊</button><input type="text" id="instantMsgInput" class="grow" placeholder="写句话发给伙伴，或点🎤语音留言" autocomplete="off"><button class="btn-purple" onclick="sendInstantMsg()">📤 发送</button></div>
 </div>
 <div class="info-card">
 <h3>🌿 情绪小记</h3>
@@ -533,6 +539,11 @@ body.dark .badge-unlock-item{background:#33273a;color:var(--text-main);}
 <div class="level-up-title">✏️ 修改我的昵称</div>
 <p class="field-hint" style="text-align:center;margin:4px 0 12px;">留空恢复默认「A伙伴/B伙伴」，昵称随房间云同步。</p>
 <input type="text" id="nickModalInput" class="grow" placeholder="输入新昵称" maxlength="12" style="width:100%;padding:10px 12px;box-sizing:border-box;border:1px solid #dcc6d8;border-radius:12px;font-size:15px;margin-bottom:12px;">
+<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;justify-content:center;">
+<span style="font-size:13px;color:#8a7884;">我的性别：</span>
+<button id="genderMaleBtn" class="btn-sm" onclick="setGender('男')" style="padding:0 18px;">👦 男生</button>
+<button id="genderFemaleBtn" class="btn-sm" onclick="setGender('女')" style="padding:0 18px;">👧 女生</button>
+</div>
 <div class="btn-row"><button class="btn-purple" onclick="saveNickFromModal()">💾 保存</button><button class="btn-exit" onclick="toggleHide('nickModal')">取消</button></div>
 </div>
 </div>
@@ -670,6 +681,7 @@ function ensureDataFields(d) {
     if (!d.quizDaily) d.quizDaily = { date: "", qIdx: 0, answers: {} };
     if (!d.quizRecords) d.quizRecords = [];
     if (!d.comfortNotices) d.comfortNotices = [];
+    if (!d.gender || typeof d.gender !== "object") d.gender = { admin: "男", user: "女" };
     // 数据迁移：历史已确认完成（finishTaskHistory）但申请记录仍停留在 approved 的，标记为 completed
     if (Array.isArray(d.finishTaskHistory) && Array.isArray(d.pendingTasks) && d.finishTaskHistory.length > 0) {
         d.pendingTasks.forEach(p => {
@@ -1138,7 +1150,22 @@ function syncStaticRoleText() {
 function openNickModal() {
     const cur = loginState.role === "admin" ? (pwdConfig.nickA || "") : (pwdConfig.nickB || "");
     document.getElementById("nickModalInput").value = cur;
+    refreshGenderBtns();
     document.getElementById("nickModal").classList.remove("hide");
+}
+function setGender(g) {
+    if (!loginState.isLogin) return;
+    if (!data.gender || typeof data.gender !== "object") data.gender = { admin: "男", user: "女" };
+    data.gender[loginState.role] = g;
+    refreshGenderBtns();
+    save(); render();
+}
+function refreshGenderBtns() {
+    const g = (data.gender && data.gender[loginState.role]) || "男";
+    const m = document.getElementById("genderMaleBtn");
+    const f = document.getElementById("genderFemaleBtn");
+    if (m) m.style.background = g === "男" ? "var(--grad-main)" : "";
+    if (f) f.style.background = g === "女" ? "var(--grad-main)" : "";
 }
 async function saveNickFromModal() {
     const v = document.getElementById("nickModalInput").value.trim();
@@ -2013,6 +2040,27 @@ function toggleVoicePlay(btn, base64) {
         cleanup();
         alert("⚠️ 播放失败，可能浏览器限制了自动播放，请再点一次");
     });
+}
+const EMOJI_SET = ["😊","😍","🥰","😘","😜","🤗","😎","🥳","😴","😭","😤","🥺","😋","🤤","😇","🤔","👻","🤡","💖","💘","💝","💕","💌","✨","🌹","🌸","🌻","🍓","🍰","🍭","🎁","🎉","🎂","🫶","🤝","💋","🌙","☀️","🌈","🦄","🐻","🐰","🍑"];
+function toggleEmojiPanel() {
+    const p = document.getElementById("emojiPanel");
+    if (!p) return;
+    if (!p.classList.contains("hide")) { p.classList.add("hide"); return; }
+    p.innerHTML = "";
+    EMOJI_SET.forEach(e => {
+        const b = document.createElement("button");
+        b.innerText = e;
+        b.onclick = function () { sendEmojiMsg(e); };
+        p.appendChild(b);
+    });
+    p.classList.remove("hide");
+}
+async function sendEmojiMsg(e) {
+    const nowTs = Date.now();
+    const msg = { role: loginState.role, roleName: getRoleName(loginState.role), text: e, time: new Date(nowTs).toLocaleString(), ts: nowTs };
+    saveChatMessage(msg);
+    document.getElementById("emojiPanel").classList.add("hide");
+    await save(); render();
 }
 function stopVoiceAll() {
     if (audioPlaying) { try { audioPlaying.pause(); } catch (e) {} audioPlaying = null; }
@@ -2908,6 +2956,13 @@ function quizStreak() {
     }
     return best;
 }
+function quizQText(q) {
+    const me = loginState.role;
+    const other = me === "admin" ? "user" : "admin";
+    const g = (data.gender && data.gender[other]) || (other === "admin" ? "男" : "女");
+    const label = g === "女" ? "她" : "他";
+    return String(q.q).replace(/对方/g, label);
+}
 function renderQuizHistory() {
     const w = document.getElementById("quizHistory");
     if (!w) return;
@@ -2930,7 +2985,7 @@ function renderQuiz() {
     const my = ans[me];
     const otherRole = me === "admin" ? "user" : "admin";
     const other = ans[otherRole];
-    let html = '<div class="quiz-q">' + q.q + '</div>';
+    let html = '<div class="quiz-q">' + quizQText(q) + '</div>';
     if (my !== undefined && my !== null && other !== undefined && other !== null) {
         const match = my === other;
         html += '<div class="quiz-result">' + (match ? '🎉 心有灵犀！你们想到一块儿去啦！' : '😆 猜错了～没关系，默契慢慢培养！') + '</div>' +
