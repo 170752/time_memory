@@ -780,6 +780,7 @@ function loadRoomSession() {
 function clearRoomSession() {
     localStorage.removeItem("loveRoomId"); localStorage.removeItem("loveRoomPass");
     currentRoomId = null; currentRoomPasscode = null;
+    stopPolling();
     if (realtimeChannel) { try { supabase.removeChannel(realtimeChannel); } catch (e) {} realtimeChannel = null; }
 }
 function genRoomCode() {
@@ -906,7 +907,17 @@ async function joinExistRoom() {
     showPage("login");
 }
 
-/* ---------------- Realtime 订阅 ---------------- */
+/* ---------------- Realtime 订阅（含轮询降级） ---------------- */
+let pollTimer = null;
+function startPolling() {
+    if (pollTimer || !cloudMode || !currentRoomId) return;
+    pollTimer = setInterval(async () => {
+        try { await loadCloudRoomData(); } catch (e) {}
+    }, 30000);
+}
+function stopPolling() {
+    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+}
 async function subscribeRealtime() {
     if (!cloudMode || !currentRoomId) return;
     if (realtimeChannel) { try { supabase.removeChannel(realtimeChannel); } catch (e) {} realtimeChannel = null; }
@@ -918,7 +929,10 @@ async function subscribeRealtime() {
             const newVer = payload.new.version;
             if (newVer > localRoomVersion) { await loadCloudRoomData(); }
         })
-        .subscribe();
+        .subscribe((status) => {
+            if (status === "SUBSCRIBED") { stopPolling(); }
+            else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") { startPolling(); }
+        });
 }
 
 /* ---------------- 好友在线状态 ---------------- */
