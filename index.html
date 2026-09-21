@@ -743,7 +743,11 @@ function showPage(mode) {
             try { remembered = JSON.parse(localStorage.getItem("loveRememberedLogin")); } catch (e) {}
             if (remembered && remembered.pwd) {
                 if (!pwdInput.value) pwdInput.value = remembered.pwd;
-                if (tip) tip.classList.remove("hide");
+                if (tip) {
+                    const rn = remembered.role === "admin" ? (pwdConfig.nickA || "A伙伴") : (pwdConfig.nickB || "B伙伴");
+                    tip.innerText = "💾 已记住上次「" + rn + "」的密码，可直接进入或修改";
+                    tip.classList.remove("hide");
+                }
             } else {
                 if (tip) tip.classList.add("hide");
             }
@@ -845,30 +849,30 @@ async function pasteRoomInfo() {
     let txt = "";
     try {
         if (navigator.clipboard && navigator.clipboard.readText) {
-            txt = await navigator.clipboard.readText();
+            txt = (await navigator.clipboard.readText()) || "";
         }
     } catch (e) { txt = ""; }
+    txt = txt.trim();
     if (!txt) {
-        alert("无法自动读取剪贴板\n请先长按复制对方发来的整套房间信息，再点此按钮；若仍失败请手动输入两个输入框");
+        alert("📋 当前浏览器未允许自动读取剪贴板\n（部分手机内置浏览器有此限制）\n\n请这样操作：\n1. 长按下方输入框选择「粘贴」\n2. 分别粘贴房间码和访问密钥");
         return;
     }
     let found = false;
-    // 房间码：6位大写（不含I O 0 1的字符集）
-    const codeMatch = txt.match(/[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{6}/);
-    if (codeMatch) {
-        document.getElementById("joinRoomCode").value = codeMatch[0];
-        found = true;
-    }
-    // 访问密钥：8位小写字母数字
-    const passMatch = txt.match(/\b[a-z0-9]{8}\b/);
-    if (passMatch) {
-        document.getElementById("joinRoomPass").value = passMatch[0];
-        found = true;
-    }
+    // 房间码：优先匹配「房间码：」后的6位大写（不含 I O 0 1），否则全文找连续6位
+    const codeChars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    let codeMatch = txt.match(new RegExp("房间码[:：]\\s*([" + codeChars + "]{6})"));
+    let code = codeMatch ? codeMatch[1] : null;
+    if (!code) { const m = txt.match(new RegExp("\\b[" + codeChars + "]{6}\\b")); if (m) code = m[0]; }
+    if (code) { document.getElementById("joinRoomCode").value = code; found = true; }
+    // 访问密钥：优先匹配「密钥：」后的8位字母数字，否则全文找连续8位
+    let passMatch = txt.match(/(?:访问)?密钥[:：]\s*([a-zA-Z0-9]{8})/);
+    let pass = passMatch ? passMatch[1] : null;
+    if (!pass) { const m = txt.match(/\b[a-zA-Z0-9]{8}\b/); if (m) pass = m[0]; }
+    if (pass) { document.getElementById("joinRoomPass").value = pass; found = true; }
     if (found) {
         alert("✅ 已自动填入房间码和访问密钥\n确认无误后点「🚪加入已有房间」");
     } else {
-        alert("未识别到房间信息，请检查复制的文字是否为「房间码：XXXXXX 访问密钥：XXXXXXXX」格式");
+        alert("❌ 未识别到房间信息\n请确认复制的文字是「房间码：XXXXXX 访问密钥：XXXXXXXX」格式");
     }
 }
 
