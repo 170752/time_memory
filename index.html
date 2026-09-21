@@ -121,6 +121,12 @@ body.dark .anniv-bar{background:#3a2534;border-color:#5a3a4d;color:#f3c8de;}
 .anniv-custom-list{margin-top:8px;font-size:13px;}
 .anniv-custom-item{display:flex;justify-content:space-between;align-items:center;padding:6px 10px;border-radius:8px;background:rgba(240,220,235,.35);margin-top:6px;color:#7d5a70;}
 body.dark .anniv-custom-item{background:#33273a;color:#e2c8dc;}
+.pass-wrap{position:relative;}
+.pass-wrap input{width:100%;padding-right:46px;}
+.pass-eye{position:absolute;right:3px;top:50%;transform:translateY(-50%);width:38px;height:38px;border:none;background:none;box-shadow:none;font-size:17px;line-height:1;cursor:pointer;border-radius:50%;padding:0;color:#a86b94;opacity:.8;transition:all .15s;}
+.pass-eye:hover{opacity:1;background:rgba(168,107,148,.1);}
+body.dark .pass-eye{color:#d9a8c8;}
+body.dark .pass-eye:hover{background:rgba(217,168,200,.12);}
 .quiz-add{font-size:12px;color:#a86b94;cursor:pointer;font-weight:600;}
 .quiz-add:hover{color:#c487aa;}
 body.dark .quiz-add{color:#d9a3c4;}
@@ -314,7 +320,7 @@ body.dark .badge-unlock-item{background:#33273a;color:var(--text-main);}
 <div class="btn-row"><button class="btn-green" onclick="pasteRoomInfo()">📋 一键粘贴房间信息</button></div>
 <p class="field-hint" style="text-align:center;">先复制对方发来的「房间码+访问密钥」，点此按钮自动填入下方</p>
 <div class="field"><label>🏷️ 房间配对码</label><input type="text" id="joinRoomCode" placeholder="输入6位房间码" autocomplete="off"></div>
-<div class="field"><label>🔒 房间访问密钥</label><input type="password" id="joinRoomPass" placeholder="输入访问密钥" autocomplete="off"></div>
+<div class="field"><label>🔒 房间访问密钥</label><div class="pass-wrap"><input type="password" id="joinRoomPass" placeholder="输入访问密钥" autocomplete="off"><button type="button" class="pass-eye" onclick="togglePassShow('joinRoomPass', this)" title="点击显示/隐藏密钥">👁</button></div></div>
 <div class="btn-row"><button class="btn-blue" onclick="joinExistRoom()">🚪 加入已有房间</button></div>
 </div>
 <div class="btn-row" style="margin-top:14px;"><button class="btn-exit" onclick="enterLocalMode()">📂 本地模式（无云同步）</button></div>
@@ -1400,6 +1406,12 @@ async function unlockRecordMinus() {
     pushPointHistory("解锁减分记录-10");
     clampPoint(); await save(); render();
     alert("✅ 已解锁全部减分记录，永久可见");
+}
+function togglePassShow(id, btn) {
+    const inp = document.getElementById(id);
+    if (!inp) return;
+    if (inp.type === "password") { inp.type = "text"; btn.innerText = "🙈"; }
+    else { inp.type = "password"; btn.innerText = "👁"; }
 }
 function toggleHide(id) { document.getElementById(id).classList.toggle("hide"); }
 function doResetPassword() {
