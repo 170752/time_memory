@@ -158,6 +158,8 @@ body.dark .comfort-done{color:#cbb8c4;}
 .emoji-panel button:hover{background:#fbeef6;transform:scale(1.12);}
 body.dark .emoji-panel{background:#2a2130;border-color:var(--border);}
 body.dark .emoji-panel button:hover{background:#3a2d42;}
+.msg-new-tip{position:sticky;bottom:8px;z-index:5;margin:-38px auto 8px;width:fit-content;padding:6px 16px;border-radius:999px;background:linear-gradient(135deg,#e9a6c8,#c98bb8);color:#fff;font-size:12.5px;box-shadow:0 4px 12px rgba(168,107,148,.35);cursor:pointer;text-align:center;transition:opacity .2s ease;}
+body.dark .msg-new-tip{background:linear-gradient(135deg,#8a5a76,#6d4863);color:#f4e6ef;}
 .online-badge{margin-left:8px;font-size:11.5px;font-weight:600;padding:2px 9px;border-radius:999px;vertical-align:2px;}
 .online-badge.online{color:#4c9a6e;background:rgba(92,184,137,.13);}
 .online-badge.offline{color:#9a8a92;background:rgba(154,138,146,.12);}
@@ -380,6 +382,7 @@ body.dark .badge-unlock-item{background:#33273a;color:var(--text-main);}
 <h3 style="display:flex;justify-content:space-between;align-items:center;"><span>💬 即时消息<span id="msgUnreadBadge" class="secret-badge hide" onclick="markMsgRead()" style="cursor:pointer;">0</span><span id="onlineBadge" class="online-badge offline">⚪ 好友离线</span></span><button class="btn-purple btn-sm" onclick="openSecretModal()">💌 悄悄话<span id="secretBadge" class="secret-badge hide">0</span></button></h3>
 <div id="cheerBanner" class="cheer-banner hide" onclick="focusChatInput()"><span id="cheerText"></span></div>
 <div id="instantMsgList" class="msg-list"></div>
+<div id="msgNewTip" class="msg-new-tip hide" onclick="goMsgBottom()">⬇️ 有新消息，点击查看</div>
 <div id="emojiPanel" class="emoji-panel hide"></div>
 <div class="row" style="margin-bottom:0;"><button id="voiceRecordBtn" class="btn-blue" style="flex:0 0 auto;width:52px;font-size:16px;" onclick="toggleRecordVoice()" title="🎤 语音留言（最长60秒，点击开始/结束）">🎤</button><button id="emojiBtn" class="btn-blue" style="flex:0 0 auto;width:52px;font-size:16px;" onclick="toggleEmojiPanel()" title="😊 发送表情">😊</button><input type="text" id="instantMsgInput" class="grow" placeholder="写句话发给伙伴，或点🎤语音留言" autocomplete="off"><button class="btn-purple" onclick="sendInstantMsg()">📤 发送</button></div>
 </div>
@@ -1891,10 +1894,14 @@ function loadMoreChat() {
     renderInstantMessages();
     const wrap = document.getElementById("instantMsgList");
     if (wrap) wrap.scrollTop = 0;
+    const tip = document.getElementById("msgNewTip");
+    if (tip) tip.classList.add("hide");
 }
 function renderInstantMessages() {
     const wrap = document.getElementById("instantMsgList");
-    if (!wrap) return; wrap.innerHTML = "";
+    if (!wrap) return;
+    const wasAtBottom = (wrap.scrollHeight - wrap.scrollTop - wrap.clientHeight) < 40;
+    wrap.innerHTML = "";
     const msgs = data.messages || [];
     if (!msgs.length) {
         wrap.innerHTML = '<div style="padding:8px 4px;color:#84747c;font-size:13px;">还没有消息，给对方发第一句话吧～</div>';
@@ -1955,7 +1962,20 @@ function renderInstantMessages() {
         }
         div.appendChild(bubble); wrap.appendChild(div);
     }
-    wrap.scrollTop = wrap.scrollHeight;
+    if (wasAtBottom) {
+        wrap.scrollTop = wrap.scrollHeight;
+        const tip = document.getElementById("msgNewTip");
+        if (tip) tip.classList.add("hide");
+    } else {
+        const tip = document.getElementById("msgNewTip");
+        if (tip && msgs.length) tip.classList.remove("hide");
+    }
+}
+function goMsgBottom() {
+    const wrap = document.getElementById("instantMsgList");
+    if (wrap) wrap.scrollTop = wrap.scrollHeight;
+    const tip = document.getElementById("msgNewTip");
+    if (tip) tip.classList.add("hide");
 }
 async function recallMsg(idx) {
     const arr = data.messages || [];
