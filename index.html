@@ -158,6 +158,7 @@ body.dark .comfort-done{color:#cbb8c4;}
 .emoji-panel button:hover{background:#fbeef6;transform:scale(1.12);}
 body.dark .emoji-panel{background:#2a2130;border-color:var(--border);}
 body.dark .emoji-panel button:hover{background:#3a2d42;}
+.msg-send-btn{align-self:stretch;height:auto;min-height:42px;border-radius:14px;}
 .msg-input-wrap{flex:1 1 0;min-width:0;display:flex;align-items:center;gap:2px;background:#fff;border:1px solid var(--border);border-radius:14px;padding:4px 6px;box-shadow:inset 0 1px 3px rgba(168,107,148,.08);transition:border-color .2s ease,box-shadow .2s ease;}
 .msg-input-wrap:focus-within{border-color:#c98bb8;box-shadow:0 0 0 2px rgba(201,139,184,.18);}
 body.dark .msg-input-wrap{background:#2a2130;border-color:var(--border);}
@@ -394,7 +395,7 @@ body.dark .badge-unlock-item{background:#33273a;color:var(--text-main);}
 <div id="instantMsgList" class="msg-list"></div>
 <div id="msgNewTip" class="msg-new-tip hide" onclick="goMsgBottom()">⬇️ 有新消息，点击查看</div>
 <div id="emojiPanel" class="emoji-panel hide"></div>
-<div class="row" style="margin-bottom:0;align-items:flex-end;"><div class="msg-input-wrap"><button id="voiceRecordBtn" class="msg-icon-btn" onclick="toggleRecordVoice()" title="🎤 语音留言（最长60秒，点击开始/结束）">🎤</button><textarea id="instantMsgInput" class="msg-input" rows="1" placeholder="写句话发给伙伴，或点🎤语音留言" autocomplete="off"></textarea><button id="emojiBtn" class="msg-icon-btn" onclick="toggleEmojiPanel()" title="😊 发送表情">😊</button></div><button class="btn-purple" style="height:42px;" onclick="sendInstantMsg()">📤 发送</button></div>
+<div class="row" style="margin-bottom:0;align-items:flex-end;"><div class="msg-input-wrap"><button id="voiceRecordBtn" class="msg-icon-btn" onclick="toggleRecordVoice()" title="🎤 语音留言（最长60秒，点击开始/结束）">🎤</button><textarea id="instantMsgInput" class="msg-input" rows="1" autocomplete="off"></textarea><button id="emojiBtn" class="msg-icon-btn" onclick="toggleEmojiPanel()" title="😊 发送表情">😊</button></div><button class="btn-purple msg-send-btn" onclick="sendInstantMsg()">📤 发送</button></div>
 </div>
 <div class="info-card">
 <h3>🌿 情绪小记</h3>
@@ -1583,8 +1584,10 @@ function renderMoodList() {
         const emoji = MOOD_EMOJI[item.mood] || "💭";
         const name = item.role || getRoleName(key);
         let inner = '<div><b style="color:#7d4a68;">' + lvIcon + " " + name + '</b> · ' + item.time + ' · <b>' + emoji + " " + item.mood + "</b></div>" + (item.note ? '<div style="margin-top:4px;color:#7c6c74;">' + item.note + "</div>" : "");
-        if (key !== loginState.role && !item.comforted && NEGATIVE_MOODS.indexOf(item.mood) >= 0) {
-            const idx = data.moodList.indexOf(item);
+        const idx = data.moodList.indexOf(item);
+        if (key === loginState.role && item.ts && !isNaN(Date.now() - item.ts) && Date.now() - item.ts <= 60000) {
+            inner += '<div style="text-align:right;"><button class="recall-btn" style="color:#d489a8;" onclick="recallMood(' + idx + ')">↩️ 撤回</button></div>';
+        } else if (key !== loginState.role && !item.comforted && NEGATIVE_MOODS.indexOf(item.mood) >= 0) {
             inner += '<div style="text-align:right;"><button class="mood-comfort" onclick="comfortMood(' + idx + ')">🫂 安慰 TA</button></div>';
         } else if (item.comforted) {
             inner += '<div class="comfort-done" style="text-align:right;">🫂 已收到安慰' + (item.comfortByRoleName ? "（" + item.comfortByRoleName + "）" : "") + '</div>';
@@ -1604,6 +1607,15 @@ function renderMoodList() {
         fold.innerHTML = '<button class="btn-more" onclick="collapseMood()">🔼 收起</button>';
         w.appendChild(fold);
     }
+}
+async function recallMood(idx) {
+    const m = (data.moodList || [])[idx];
+    if (!m || moodRoleKey(m) !== loginState.role) return;
+    const age = Date.now() - (m.ts || 0);
+    if (isNaN(age) || age < 0 || age > 60000) { alert("⏱️ 仅可撤回 1 分钟内记录的情绪"); return; }
+    data.moodList.splice(idx, 1); /* 撤回即删除，不留记录 */
+    await save(); render();
+    alert("✅ 已撤回，情绪记录已删除");
 }
 async function submitShopApply() {
     const n = document.getElementById("shopApplyName").value.trim();
