@@ -96,7 +96,7 @@ button:disabled{background:#bbb !important;box-shadow:none;cursor:not-allowed;op
 .record-item{background:var(--primary-soft);padding:10px 14px;border-radius:var(--radius-md);margin:6px 0;font-size:14px;display:flex;justify-content:space-between;align-items:center;gap:10px;border:1px solid rgba(238,217,231,.5);}
 .record-item .record-name{flex:1 1 0;min-width:0;word-break:break-word;}
 .negative-point{color:#cf4858;font-weight:600;}
-.msg-list{max-height:260px;overflow-y:auto;-webkit-overflow-scrolling:touch;background:linear-gradient(180deg,#fffdfe,#fdf6fb);border-radius:14px;padding:12px;margin-bottom:10px;border:1px solid var(--border);box-shadow:inset 0 1px 4px rgba(168,107,148,.05);}
+.msg-list{max-height:360px;overflow-y:auto;-webkit-overflow-scrolling:touch;background:linear-gradient(180deg,#fffdfe,#fdf6fb);border-radius:14px;padding:12px;margin-bottom:10px;border:1px solid var(--border);box-shadow:inset 0 1px 4px rgba(168,107,148,.05);}
 .msg-list::-webkit-scrollbar,.secret-list::-webkit-scrollbar{width:6px;}
 .msg-list::-webkit-scrollbar-thumb,.secret-list::-webkit-scrollbar-thumb{background:#e2c8dc;border-radius:3px;}
 .chat-row{display:flex;margin:8px 0;width:100%;}
@@ -158,6 +158,9 @@ body.dark .comfort-done{color:#cbb8c4;}
 .emoji-panel button:hover{background:#fbeef6;transform:scale(1.12);}
 body.dark .emoji-panel{background:#2a2130;border-color:var(--border);}
 body.dark .emoji-panel button:hover{background:#3a2d42;}
+.msg-input{flex:1 1 0;min-width:0;border:1px solid var(--border);border-radius:12px;padding:9px 12px;font-size:14px;line-height:1.5;resize:none;max-height:96px;overflow-y:auto;background:#fff;color:inherit;font-family:inherit;box-shadow:inset 0 1px 3px rgba(168,107,148,.08);}
+.msg-input:focus{outline:none;border-color:#c98bb8;box-shadow:0 0 0 2px rgba(201,139,184,.18);}
+body.dark .msg-input{background:#2a2130;border-color:var(--border);color:#f0e4ec;}
 .msg-new-tip{display:block;width:fit-content;margin:8px auto;padding:6px 16px;border-radius:999px;background:linear-gradient(135deg,#e9a6c8,#c98bb8);color:#fff;font-size:12.5px;box-shadow:0 4px 12px rgba(168,107,148,.35);cursor:pointer;text-align:center;transition:opacity .2s ease;}
 body.dark .msg-new-tip{background:linear-gradient(135deg,#8a5a76,#6d4863);color:#f4e6ef;}
 .online-badge{margin-left:8px;font-size:11.5px;font-weight:600;padding:2px 9px;border-radius:999px;vertical-align:2px;}
@@ -384,7 +387,7 @@ body.dark .badge-unlock-item{background:#33273a;color:var(--text-main);}
 <div id="instantMsgList" class="msg-list"></div>
 <div id="msgNewTip" class="msg-new-tip hide" onclick="goMsgBottom()">⬇️ 有新消息，点击查看</div>
 <div id="emojiPanel" class="emoji-panel hide"></div>
-<div class="row" style="margin-bottom:0;"><button id="voiceRecordBtn" class="btn-blue" style="flex:0 0 auto;width:52px;font-size:16px;" onclick="toggleRecordVoice()" title="🎤 语音留言（最长60秒，点击开始/结束）">🎤</button><button id="emojiBtn" class="btn-blue" style="flex:0 0 auto;width:52px;font-size:16px;" onclick="toggleEmojiPanel()" title="😊 发送表情">😊</button><input type="text" id="instantMsgInput" class="grow" placeholder="写句话发给伙伴，或点🎤语音留言" autocomplete="off"><button class="btn-purple" onclick="sendInstantMsg()">📤 发送</button></div>
+<div class="row" style="margin-bottom:0;align-items:flex-end;"><button id="voiceRecordBtn" class="btn-blue" style="flex:0 0 auto;width:40px;height:40px;padding:0;font-size:14px;" onclick="toggleRecordVoice()" title="🎤 语音留言（最长60秒，点击开始/结束）">🎤</button><button id="emojiBtn" class="btn-blue" style="flex:0 0 auto;width:40px;height:40px;padding:0;font-size:14px;" onclick="toggleEmojiPanel()" title="😊 发送表情">😊</button><textarea id="instantMsgInput" class="msg-input" rows="1" placeholder="写句话发给伙伴，或点🎤语音留言" autocomplete="off"></textarea><button class="btn-purple" style="height:40px;" onclick="sendInstantMsg()">📤 发送</button></div>
 </div>
 <div class="info-card">
 <h3>🌿 情绪小记</h3>
@@ -2011,6 +2014,23 @@ function saveChatMessage(msg) {
         data.careCount[loginState.role] = (data.careCount[loginState.role] || 0) + 1;
     }
 }
+function autoResizeMsgInput() {
+    const inp = document.getElementById("instantMsgInput");
+    if (!inp) return;
+    inp.style.height = "auto";
+    inp.style.height = Math.min(inp.scrollHeight, 96) + "px";
+}
+function initChatInput() {
+    const inp = document.getElementById("instantMsgInput");
+    if (!inp) return;
+    inp.addEventListener("input", autoResizeMsgInput);
+    inp.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            sendInstantMsg();
+        }
+    });
+}
 async function sendInstantMsg() {
     const input = document.getElementById("instantMsgInput");
     const txt = (input.value || "").trim();
@@ -2019,6 +2039,7 @@ async function sendInstantMsg() {
     const msg = { role: loginState.role, roleName: getRoleName(loginState.role), text: txt, time: new Date(nowTs).toLocaleString(), ts: nowTs };
     saveChatMessage(msg);
     input.value = "";
+    input.style.height = "auto";
     await save(); render();
 }
 /* ---------------- 语音留言 ---------------- */
@@ -2151,6 +2172,7 @@ function pickEmoji(e) {
     const inp = document.getElementById("instantMsgInput");
     if (!inp) return;
     inp.value += e;
+    autoResizeMsgInput();
     inp.focus();
 }
 function stopVoiceAll() {
@@ -3541,6 +3563,7 @@ function render() {
 /* ---------------- 初始化 ---------------- */
 window.addEventListener("load", function () {
     showPage("room");
+    initChatInput();
     if (cloudMode) {
         if (loadRoomSession()) {
             document.getElementById("joinRoomCode").value = currentRoomId;
