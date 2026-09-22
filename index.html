@@ -96,7 +96,7 @@ button:disabled{background:#bbb !important;box-shadow:none;cursor:not-allowed;op
 .record-item{background:var(--primary-soft);padding:10px 14px;border-radius:var(--radius-md);margin:6px 0;font-size:14px;display:flex;justify-content:space-between;align-items:center;gap:10px;border:1px solid rgba(238,217,231,.5);}
 .record-item .record-name{flex:1 1 0;min-width:0;word-break:break-word;}
 .negative-point{color:#cf4858;font-weight:600;}
-.msg-list{max-height:260px;overflow-y:auto;background:linear-gradient(180deg,#fffdfe,#fdf6fb);border-radius:14px;padding:12px;margin-bottom:10px;border:1px solid var(--border);box-shadow:inset 0 1px 4px rgba(168,107,148,.05);}
+.msg-list{max-height:260px;overflow-y:auto;-webkit-overflow-scrolling:touch;background:linear-gradient(180deg,#fffdfe,#fdf6fb);border-radius:14px;padding:12px;margin-bottom:10px;border:1px solid var(--border);box-shadow:inset 0 1px 4px rgba(168,107,148,.05);}
 .msg-list::-webkit-scrollbar,.secret-list::-webkit-scrollbar{width:6px;}
 .msg-list::-webkit-scrollbar-thumb,.secret-list::-webkit-scrollbar-thumb{background:#e2c8dc;border-radius:3px;}
 .chat-row{display:flex;margin:8px 0;width:100%;}
@@ -158,7 +158,7 @@ body.dark .comfort-done{color:#cbb8c4;}
 .emoji-panel button:hover{background:#fbeef6;transform:scale(1.12);}
 body.dark .emoji-panel{background:#2a2130;border-color:var(--border);}
 body.dark .emoji-panel button:hover{background:#3a2d42;}
-.msg-new-tip{position:sticky;bottom:8px;z-index:5;margin:-38px auto 8px;width:fit-content;padding:6px 16px;border-radius:999px;background:linear-gradient(135deg,#e9a6c8,#c98bb8);color:#fff;font-size:12.5px;box-shadow:0 4px 12px rgba(168,107,148,.35);cursor:pointer;text-align:center;transition:opacity .2s ease;}
+.msg-new-tip{display:block;width:fit-content;margin:8px auto;padding:6px 16px;border-radius:999px;background:linear-gradient(135deg,#e9a6c8,#c98bb8);color:#fff;font-size:12.5px;box-shadow:0 4px 12px rgba(168,107,148,.35);cursor:pointer;text-align:center;transition:opacity .2s ease;}
 body.dark .msg-new-tip{background:linear-gradient(135deg,#8a5a76,#6d4863);color:#f4e6ef;}
 .online-badge{margin-left:8px;font-size:11.5px;font-weight:600;padding:2px 9px;border-radius:999px;vertical-align:2px;}
 .online-badge.online{color:#4c9a6e;background:rgba(92,184,137,.13);}
@@ -1907,10 +1907,17 @@ function renderInstantMessages() {
         wrap.innerHTML = '<div style="padding:8px 4px;color:#84747c;font-size:13px;">还没有消息，给对方发第一句话吧～</div>';
         return;
     }
-    if (msgs.length > chatShowCount) {
+    if (msgs.length > chatShowCount || chatShowCount > 6) {
         const more = document.createElement("div");
         more.style.textAlign = "center";
-        more.innerHTML = '<button class="btn-more" onclick="loadMoreChat()">📜 查看更早消息（' + (msgs.length - chatShowCount) + ' 条）</button>';
+        more.style.display = "flex";
+        more.style.gap = "8px";
+        more.style.justifyContent = "center";
+        more.style.flexWrap = "wrap";
+        let btns = "";
+        if (msgs.length > chatShowCount) btns += '<button class="btn-more" onclick="loadMoreChat()">📜 查看更早消息（' + (msgs.length - chatShowCount) + ' 条）</button>';
+        if (chatShowCount > 6) btns += '<button class="btn-more" onclick="goMsgBottom()">⬇️ 回到最新消息</button>';
+        more.innerHTML = btns;
         wrap.appendChild(more);
     }
     const arr = msgs.slice(-chatShowCount);
