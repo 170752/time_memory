@@ -1131,10 +1131,15 @@ async function save() {
     }
     data._ts = Date.now();
     data.version = (data.version || 0) + 1;
-    localStorage.setItem("loveTaskData", JSON.stringify(data));
-    localStorage.setItem("lovePwdConfig", JSON.stringify(pwdConfig));
+    try {
+        localStorage.setItem("loveTaskData", JSON.stringify(data));
+        localStorage.setItem("lovePwdConfig", JSON.stringify(pwdConfig));
+    } catch (e) { console.error("本地保存失败", e); }
     if (!cloudMode || !currentRoomId) return;
-    const payload = { data: JSON.parse(JSON.stringify(data)), pwdConfig: JSON.parse(JSON.stringify(pwdConfig)) };
+    let payload = null;
+    try {
+        payload = { data: JSON.parse(JSON.stringify(data)), pwdConfig: JSON.parse(JSON.stringify(pwdConfig)) };
+    } catch (e) { console.error("数据序列化失败", e); return; }
     const ver = data.version;
     try {
         const { error } = await supabase.from("love_rooms").update({ payload: payload, version: ver }).eq("id", currentRoomId);
