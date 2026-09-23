@@ -1183,6 +1183,10 @@ async function save() {
         localRoomVersion = ver;
     } catch (err) {
         console.error("云端保存失败", err);
+        if (!window._cloudWarnAt || Date.now() - window._cloudWarnAt > 15000) {
+            window._cloudWarnAt = Date.now();
+            alert("⚠️ 云端同步失败（网络问题），数据已保存在本机。请检查网络后重新操作，恢复后会自动同步。");
+        }
     }
 }
 
