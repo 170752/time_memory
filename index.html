@@ -1136,6 +1136,20 @@ function showOnlineTip(name, online) {
 }
 
 /* ---------------- 拉取云端数据 ---------------- */
+/* 按房间的本地缓存（避免跨房间串数据） */
+function getRoomCache(roomId) {
+    try {
+        const c = JSON.parse(localStorage.getItem("loveRoomCache") || "{}");
+        return c[roomId] || null;
+    } catch (e) { return null; }
+}
+function setRoomCache(roomId, d, pwd) {
+    try {
+        const c = JSON.parse(localStorage.getItem("loveRoomCache") || "{}");
+        c[roomId] = { data: d, pwdConfig: pwd, version: (d && d.version) || 0, ts: Date.now() };
+        localStorage.setItem("loveRoomCache", JSON.stringify(c));
+    } catch (e) { console.error("房间缓存写入失败", e); }
+}
 async function loadCloudRoomData() {
     if (!cloudMode || !currentRoomId) return false;
     try {
@@ -1144,12 +1158,30 @@ async function loadCloudRoomData() {
         const roomRow = res.data;
         localRoomVersion = roomRow.version;
         const cloudPayload = roomRow.payload;
-        if (cloudPayload) {
-            if (cloudPayload.data) data = ensureDataFields(cloudPayload.data);
-            if (cloudPayload.pwdConfig) {
-                pwdConfig = Object.assign({ admin: "123456", user: "654321", secretCode: "iloveyou", nickA: "", nickB: "" }, cloudPayload.pwdConfig);
+        const cloudVer = roomRow.version;
+        const localCache = getRoomCache(currentRoomId);
+        const localVer = localCache && localCache.data ? (localCache.data.version || 0) : 0;
+        if (localVer > cloudVer) {
+            /* 本地比云端新 → 本地上传覆盖云端，两边取最新 */
+            const localData = ensureDataFields(localCache.data);
+            const pwdCfg = Object.assign({ admin: "123456", user: "654321", secretCode: "iloveyou", nickA: "", nickB: "" }, localCache.pwdConfig || {});
+            data = localData; pwdConfig = pwdCfg;
+            try {
+                const up = await supabase.from("love_rooms").update({ payload: { data: JSON.parse(JSON.stringify(localData)), pwdConfig: JSON.parse(JSON.stringify(pwdCfg)) }, version: localVer }).eq("id", currentRoomId);
+                if (up.error) throw up.error;
+                localRoomVersion = localVer;
+                console.log("本地数据较新，已上传同步云端");
+            } catch (e) { console.error("本地→云端上传失败", e); }
+        } else {
+            /* 云端较新或相同 → 用云端覆盖本地 */
+            if (cloudPayload) {
+                if (cloudPayload.data) data = ensureDataFields(cloudPayload.data);
+                if (cloudPayload.pwdConfig) {
+                    pwdConfig = Object.assign({ admin: "123456", user: "654321", secretCode: "iloveyou", nickA: "", nickB: "" }, cloudPayload.pwdConfig);
+                }
             }
         }
+        setRoomCache(currentRoomId, data, pwdConfig);
         localStorage.setItem("loveTaskData", JSON.stringify(data));
         localStorage.setItem("lovePwdConfig", JSON.stringify(pwdConfig));
         render();
@@ -1170,6 +1202,7 @@ async function save() {
     try {
         localStorage.setItem("loveTaskData", JSON.stringify(data));
         localStorage.setItem("lovePwdConfig", JSON.stringify(pwdConfig));
+        if (currentRoomId) setRoomCache(currentRoomId, data, pwdConfig);
     } catch (e) { console.error("本地保存失败", e); }
     if (!cloudMode || !currentRoomId) return;
     let payload = null;
