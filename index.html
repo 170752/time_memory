@@ -8,8 +8,8 @@
 <meta name="theme-color" content="#a86b94">
 <title>时光备忘录3.0｜Supabase云同步</title>
 <!-- build:2026-09-22 -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.1/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/echarts@5.6.0/dist/echarts.min.js" crossorigin="anonymous"></script>
+<script src="vendor/supabase.min.js"></script>
+<script src="vendor/echarts.min.js"></script>
 <style>
 :root{--primary:#a86b94;--primary-dark:#7d4a68;--primary-deep:#6d3d58;--primary-soft:#faf2f7;--card-bg:#fff;--card-soft:#fdf7fb;--text-main:#5a4650;--text-sub:#8a7884;--text-light:#9c8c94;--border:#eed9e7;--border-dash:#e6d0e2;--danger:#e0566b;--success:#5cb889;--radius-lg:20px;--radius-md:14px;--radius-sm:10px;--gap:10px;--ctrl-h:44px;--grad-main:linear-gradient(135deg,#c08ac2,#a86b94 55%,#8f5a8c);--grad-soft:linear-gradient(160deg,#fdf3fa,#f7ebf5);--grad-card:linear-gradient(180deg,#ffffff,#fef9fc);--shadow-card:0 10px 32px rgba(168,107,148,.14),0 2px 8px rgba(168,107,148,.06);--shadow-item:0 4px 14px rgba(168,107,148,.10);--shadow-pop:0 20px 50px rgba(90,50,80,.28);}
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -983,7 +983,8 @@ async function joinExistRoom() {
     if (roomRow.passcode !== rpass) { alert("访问密钥错误！"); return; }
     saveRoomSession(rid, rpass);
     localRoomVersion = roomRow.version;
-    await subscribeRealtime();
+    /* 实时订阅不阻塞进房（WebSocket 慢时避免卡住登录页），数据加载完成后再进登录页 */
+    subscribeRealtime();
     await loadCloudRoomData();
     showPage("login");
 }
