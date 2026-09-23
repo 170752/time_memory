@@ -408,7 +408,7 @@ body.dark .badge-unlock-item{background:#33273a;color:var(--text-main);}
 <div class="stat-line"><span>📊 约定统计</span><span>总计 <b id="totalTask">0</b>｜已完成 <b id="doneTask">0</b>｜待兑现 <b id="waitTask">0</b>｜兑现率 <b id="finishRate">0</b>%</span></div>
 </div>
 <div class="info-card">
-<h3 style="display:flex;justify-content:space-between;align-items:center;"><span>💬 即时消息<span id="msgUnreadBadge" class="secret-badge hide" onclick="markMsgRead()" style="cursor:pointer;">0</span><span id="onlineBadge" class="online-badge offline">⚪ 好友离线</span></span><button class="btn-purple btn-sm" onclick="openSecretModal()">💌 悄悄话<span id="secretBadge" class="secret-badge hide">0</span></button></h3>
+<h3 style="display:flex;justify-content:space-between;align-items:center;"><span>💬 即时消息<span id="msgUnreadBadge" class="secret-badge hide" onclick="markMsgRead()" style="cursor:pointer;">0</span><span id="onlineBadge" class="online-badge offline">⚪ 好友离线</span></span><span style="display:flex;gap:6px;align-items:center;"><button class="btn-purple btn-sm" onclick="manualSync()" title="手动同步最新数据">🔄 同步</button><button class="btn-purple btn-sm" onclick="openSecretModal()">💌 悄悄话<span id="secretBadge" class="secret-badge hide">0</span></button></span></h3>
 <div id="cheerBanner" class="cheer-banner hide" onclick="focusChatInput()"><span id="cheerText"></span></div>
 <div id="instantMsgList" class="msg-list"></div>
 <div id="msgNewTip" class="msg-new-tip hide" onclick="goMsgBottom()">⬇️ 有新消息，点击查看</div>
@@ -994,7 +994,7 @@ function startPolling() {
     if (pollTimer || !cloudMode || !currentRoomId) return;
     pollTimer = setInterval(async () => {
         try { await loadCloudRoomData(); } catch (e) {}
-    }, 30000);
+    }, 10000);
 }
 function stopPolling() {
     if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
@@ -1229,6 +1229,21 @@ async function save() {
         if (!window._cloudWarnAt || Date.now() - window._cloudWarnAt > 15000) {
             window._cloudWarnAt = Date.now();
             alert("⚠️ 云端同步失败（网络问题），数据已保存在本机。请检查网络后重新操作，恢复后会自动同步。");
+        }
+        /* 自动补传：8 秒后自动重试一次（网络恢复后生效，无需手动） */
+        if (!window._saveRetryTimer) {
+            window._saveRetryTimer = setTimeout(async () => {
+                window._saveRetryTimer = null;
+                try {
+                    if (cloudMode && currentRoomId && data) {
+                        const payload2 = { data: JSON.parse(JSON.stringify(data)), pwdConfig: JSON.parse(JSON.stringify(pwdConfig)) };
+                        const up = await supabase.from("love_rooms").update({ payload: payload2, version: data.version }).eq("id", currentRoomId);
+                        if (up.error) throw up.error;
+                        localRoomVersion = data.version;
+                        console.log("自动补传成功");
+                    }
+                } catch (e2) { console.error("自动补传失败", e2); }
+            }, 8000);
         }
     }
 }
@@ -3342,6 +3357,11 @@ async function answerQuiz(opt) {
     }
     await save(); render();
     if (bothDone) checkBadgeUnlocks();
+}
+async function manualSync() {
+    if (!cloudMode || !currentRoomId) { alert("当前为本地模式，无需同步"); return; }
+    const ok = await loadCloudRoomData();
+    alert(ok ? "✅ 已同步到最新数据" : "⚠️ 同步失败，请检查网络后重试");
 }
 /* ---------------- 每日幸运签 ---------------- */
 const FORTUNE_BANK = [
