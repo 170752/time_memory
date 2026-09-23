@@ -1653,7 +1653,7 @@ function renderChart() {
     if (chartFilter === "30day") hl = hl.filter(h => new Date(h.time).getTime() >= now - 30 * 86400000);
     const labels = hl.map(h => {
         const d = new Date(h.time);
-        return (d.getMonth() + 1) + "/" + d.getDate() + " " + d.getHours() + ":" + String(d.getMinutes()).padStart(2, "0");
+        return (d.getMonth() + 1) + "/" + d.getDate() + " " + d.getHours() + ":" + (d.getMinutes() < 10 ? "0" : "") + d.getMinutes();
     });
     const pts = hl.map(h => h.point);
     pointChart.setOption({
@@ -1997,6 +1997,7 @@ async function confirmSign(recIdx) {
 }
 async function applyReturn(recIdx) {
     const rec = data.shopRecords[recIdx]; if (!rec) return;
+    if (rec.signed === true) { alert("✅ 已签收的商品不能再退货"); return; }
     if ((data.returnApplies || []).some(x => x.status !== "rejected" && x.goodsName === rec.goodsName && x.cost === rec.cost && x.qty === (rec.qty || 1) && x.time === rec.time)) {
         alert("该笔兑换已有退货申请在处理中"); return;
     }
@@ -3278,7 +3279,7 @@ const QUIZ_BANK = [
 ];
 function todayStr() {
     const d = new Date();
-    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+    return d.getFullYear() + "-" + (d.getMonth() + 1 < 10 ? "0" : "") + (d.getMonth() + 1) + "-" + (d.getDate() < 10 ? "0" : "") + d.getDate();
 }
 function getTodayQuiz() {
     if (!data.quizDaily || data.quizDaily.date !== todayStr()) {
@@ -3321,7 +3322,7 @@ function quizStreak() {
     let cur = 0, best = 0;
     const d = new Date();
     for (let i = 0; i < 400; i++) {
-        const ds = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+        const ds = d.getFullYear() + "-" + (d.getMonth() + 1 < 10 ? "0" : "") + (d.getMonth() + 1) + "-" + (d.getDate() < 10 ? "0" : "") + d.getDate();
         if (set.has(ds)) { cur++; best = Math.max(best, cur); } else { cur = 0; }
         d.setDate(d.getDate() - 1);
     }
