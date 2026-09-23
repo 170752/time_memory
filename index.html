@@ -117,6 +117,15 @@ body.dark .chat-bubble.other .voice-bar{background:#3a2d42;color:#e8d4e6;border-
 .cheer-banner:hover{transform:translateY(-1px);}
 body.dark .cheer-banner{background:#3a2534;border-color:#5a3a4d;color:#f3c8de;}
 .anniv-bar{padding:10px 14px;border-radius:12px;background:linear-gradient(135deg,#fdf0f5,#fbe8f0);border:1px solid #f3cddf;color:#a85d80;font-size:14px;line-height:1.7;}
+.fortune-item{background:var(--primary-soft);border:1px solid rgba(238,217,231,.6);border-radius:12px;padding:10px 12px;margin:6px 0;}
+.fortune-label{font-size:12px;color:var(--text-sub);margin-bottom:4px;}
+.fortune-text{font-size:15px;font-weight:600;color:var(--primary-dark);line-height:1.6;}
+.fortune-tip{font-size:13px;color:var(--text-light);}
+.fortune-sent{font-size:12px;color:#5cb889;margin-top:6px;}
+.fortune-history{margin-top:8px;font-size:12px;color:var(--text-sub);border-top:1px dashed var(--border-dash);padding-top:6px;}
+.fortune-history-item{margin-top:4px;line-height:1.5;}
+body.dark .fortune-item{background:#33273a;border-color:#5a3a4d;}
+body.dark .fortune-text{color:#f3c8de;}
 body.dark .anniv-bar{background:#3a2534;border-color:#5a3a4d;color:#f3c8de;}
 .anniv-custom-list{margin-top:8px;font-size:13px;}
 .anniv-custom-item{display:flex;justify-content:space-between;align-items:center;padding:6px 10px;border-radius:8px;background:rgba(240,220,235,.35);margin-top:6px;color:#7d5a70;}
@@ -386,6 +395,15 @@ body.dark .badge-unlock-item{background:#33273a;color:var(--text-main);}
 </div>
 </div>
 <div class="info-card">
+<h3>🎋 每日幸运签</h3>
+<div id="fortuneBox"></div>
+</div>
+<div class="info-card">
+<h3>📊 恋爱周报</h3>
+<p class="field-hint">每周自动汇总你们的甜蜜数据，生成专属周报</p>
+<div class="btn-row"><button class="btn-purple" onclick="openWeeklyReport()">📄 查看本周恋爱周报</button></div>
+</div>
+<div class="info-card">
 <div class="stat-line"><span>💎 当前积分</span><span style="font-size:22px;font-weight:700;color:var(--primary-dark);"><span id="point">0</span> 分</span></div>
 <div class="stat-line"><span>📊 约定统计</span><span>总计 <b id="totalTask">0</b>｜已完成 <b id="doneTask">0</b>｜待兑现 <b id="waitTask">0</b>｜兑现率 <b id="finishRate">0</b>%</span></div>
 </div>
@@ -541,6 +559,22 @@ body.dark .badge-unlock-item{background:#33273a;color:var(--text-main);}
 <div style="font-size:46px;">🎉</div>
 <div id="annivCelebrateText" class="level-up-title" style="margin-top:12px;white-space:pre-line;"></div>
 <button class="btn-purple" onclick="toggleHide('annivCelebrateModal')">✅ 知道啦</button>
+</div>
+</div>
+<!-- 幸运签弹窗 -->
+<div id="fortuneModal" class="level-modal hide">
+<div class="level-modal-box" style="text-align:center;padding:28px 22px;">
+<div style="font-size:44px;">💌</div>
+<div id="fortuneModalText" class="level-up-title" style="margin-top:12px;white-space:pre-line;font-size:16px;line-height:1.7;"></div>
+<button class="btn-purple" onclick="toggleHide('fortuneModal')">✅ 知道啦</button>
+</div>
+</div>
+<!-- 恋爱周报弹窗 -->
+<div id="weeklyReportModal" class="level-modal hide">
+<div class="level-modal-box" style="text-align:center;padding:24px 20px;max-width:340px;width:92%;">
+<div style="font-size:38px;">📊</div>
+<div id="weeklyReportText" class="level-up-title" style="margin-top:10px;white-space:pre-line;font-size:15px;line-height:1.75;text-align:left;"></div>
+<button class="btn-purple" onclick="toggleHide('weeklyReportModal')">✅ 知道啦</button>
 </div>
 </div>
 <!-- 安慰提醒弹窗 -->
@@ -726,6 +760,8 @@ function ensureDataFields(d) {
     if (d.lastLevel === undefined) d.lastLevel = Math.floor((d.point || 0) / 20) + 1;
     if (!d.annivDates) d.annivDates = [];
     if (!d.annivCelebrated) d.annivCelebrated = {};
+    if (!d.fortuneDaily) d.fortuneDaily = { date: "", admin: null, user: null };
+    if (!d.fortuneSents) d.fortuneSents = [];
     if (!d.quizDaily) d.quizDaily = { date: "", qIdx: 0, answers: {} };
     if (!d.quizRecords) d.quizRecords = [];
     if (!d.comfortNotices) d.comfortNotices = [];
@@ -3260,6 +3296,145 @@ async function answerQuiz(opt) {
     await save(); render();
     if (bothDone) checkBadgeUnlocks();
 }
+/* ---------------- 每日幸运签 ---------------- */
+const FORTUNE_BANK = [
+    "今天也要元气满满哦～", "对方正在心里偷偷想你", "记得多喝水，健康最重要",
+    "今天会有小惊喜等着你", "给 TA 一个大大的拥抱吧", "你的笑容是最好的天气",
+    "好运正在向你靠近", "适合表白的小日子", "今天适合一起散步",
+    "保持好心情，一切都顺", "TA 比你以为的更爱你", "今天适合说一句甜甜的话",
+    "把烦恼抛掉，去吃点好吃的", "今天的你闪闪发光", "好运签：今天听一首喜欢的歌",
+    "记得早点休息，晚安好梦", "给彼此一点独处的时间", "小确幸藏在生活的角落",
+    "今天的天空很好看，记得抬头", "你们的心意相通，默契满分", "适合计划一次小约会",
+    "别急，好事都会慢慢来", "感恩遇见，感恩相伴", "今天的任务：夸夸对方",
+    "旧事清零，轻装上阵", "快乐会传染，多笑一笑", "今晚的月亮替我说爱你",
+    "一起进步的日子最甜", "适合尝试一道新菜", "小小的仪式感让爱更鲜活",
+    "你的努力都算数", "转角可能遇见小幸运", "今日宜牵手散步",
+    "给 TA 发一条走心的消息", "保持热爱，奔赴山海", "日子平淡，爱意滚烫",
+    "记得吃早餐哦", "今天适合互相鼓励", "好运躲在你口袋里",
+    "一起看一部老电影吧", "你值得世间所有的美好", "慢慢来，比较快",
+    "给今天的自己一个微笑", "适合整理房间，也整理心情", "TA 正在为你准备惊喜",
+    "心之所向，素履以往", "今天的幸运色是粉色", "说一句真心话，胜过千言万语",
+    "认真生活，就能找到被藏起来的糖果", "适合记录今天的美好瞬间", "爱自己，是一生浪漫的开始",
+    "今日宜：一起发呆看云", "好运正在派送中，请查收", "所有的遇见，都是久别重逢",
+    "适合给 TA 准备一份小礼物", "心宽一寸，路宽一丈", "今天的风很温柔，适合想你",
+    "一起许一个小愿望吧", "岁月漫长，值得等待", "你的存在，就是别人的好运气"
+];
+function showModal(id) { const el = document.getElementById(id); if (el) el.classList.remove("hide"); }
+function renderFortune() {
+    const box = document.getElementById("fortuneBox");
+    if (!box || !loginState.isLogin) return;
+    if (!data.fortuneDaily || data.fortuneDaily.date !== todayStr()) {
+        data.fortuneDaily = { date: todayStr(), admin: null, user: null };
+    }
+    const fd = data.fortuneDaily;
+    const me = loginState.role;
+    const other = me === "admin" ? "user" : "admin";
+    const myFortune = fd[me];
+    const otherFortune = fd[other];
+    const sentToday = (data.fortuneSents || []).some(s => s.date === todayStr() && s.from === me);
+    let html = '<div class="fortune-item">';
+    if (myFortune) {
+        html += '<div class="fortune-label">✨ 我的今日签</div><div class="fortune-text">' + myFortune.text + '</div>';
+        html += sentToday
+            ? '<div class="fortune-sent">💌 已把好运传给 ' + getRoleName(other) + '</div>'
+            : '<div class="btn-row" style="margin-top:6px;"><button class="btn-purple btn-sm" onclick="sendFortune()">💌 传给 ' + getRoleName(other) + '</button></div>';
+    } else {
+        html += '<div class="fortune-label">✨ 我的今日签</div><div class="btn-row" style="margin-top:6px;"><button class="btn-purple btn-sm" onclick="drawFortune()">🍀 抽取今日幸运签</button></div>';
+    }
+    html += '</div><div class="fortune-item">';
+    if (otherFortune) {
+        html += '<div class="fortune-label">💫 ' + getRoleName(other) + ' 的今日签</div><div class="fortune-text">' + otherFortune.text + '</div>';
+    } else {
+        html += '<div class="fortune-label">💫 ' + getRoleName(other) + ' 的今日签</div><div class="fortune-tip">TA 还没抽签哦～</div>';
+    }
+    html += '</div>';
+    const sents = (data.fortuneSents || []).slice(-3).reverse();
+    if (sents.length) {
+        html += '<div class="fortune-history">📮 最近传签';
+        sents.forEach(s => {
+            html += '<div class="fortune-history-item">' + (s.from === me ? "我" : getRoleName(s.from)) + ' → ' + (s.to === me ? "我" : getRoleName(s.to)) + '：『' + s.text + '』</div>';
+        });
+        html += '</div>';
+    }
+    box.innerHTML = html;
+}
+async function drawFortune() {
+    if (!data.fortuneDaily || data.fortuneDaily.date !== todayStr()) data.fortuneDaily = { date: todayStr(), admin: null, user: null };
+    if (data.fortuneDaily[loginState.role]) { alert("今天已经抽过签啦，明天再来～"); return; }
+    const text = FORTUNE_BANK[Math.floor(Math.random() * FORTUNE_BANK.length)];
+    data.fortuneDaily[loginState.role] = { text: text, ts: Date.now() };
+    await save(); render();
+    alert("🍀 今日幸运签：『" + text + "』");
+}
+async function sendFortune() {
+    const fd = data.fortuneDaily;
+    if (!fd || fd.date !== todayStr() || !fd[loginState.role]) return;
+    const to = loginState.role === "admin" ? "user" : "admin";
+    const sents = data.fortuneSents || (data.fortuneSents = []);
+    if (sents.some(s => s.date === todayStr() && s.from === loginState.role)) { alert("今天已经传过啦，明天再传～"); return; }
+    sents.push({ from: loginState.role, to: to, text: fd[loginState.role].text, date: todayStr(), ts: Date.now(), read: false });
+    await save(); render();
+    alert("💌 已把今日好运传给 " + getRoleName(to) + "！");
+}
+function checkFortuneReceived() {
+    if (!loginState.isLogin) return;
+    const sents = (data.fortuneSents || []).filter(s => s.to === loginState.role && !s.read);
+    if (!sents.length) return;
+    const s = sents[0];
+    s.read = true;
+    const who = s.from === loginState.role ? "我" : getRoleName(s.from);
+    document.getElementById("fortuneModalText").innerText = who + " 传给你一支幸运签：\n『" + s.text + "』\n\n把好运收下，今天也要开开心心哦～";
+    showModal("fortuneModal");
+    save();
+}
+/* ---------------- 恋爱周报 ---------------- */
+const WEEKLY_TIPS = [
+    "爱是细水长流，也是并肩同行。",
+    "你们的故事，每周都在更新。",
+    "一起走过的日子，都值得纪念。",
+    "默契不是天生，是慢慢养成的。",
+    "好的感情，是两个人一起变好。",
+    "日子虽然平淡，爱意从不缺席。",
+    "互相惦记的人，不会走散。",
+    "这一周也很棒，下周继续加油。"
+];
+function weekStartTs() {
+    const now = new Date();
+    const day = now.getDay() === 0 ? 7 : now.getDay();
+    const d = new Date(now);
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() - (day - 1));
+    return d.getTime();
+}
+function weekRangeText() {
+    const ws = new Date(weekStartTs());
+    const we = new Date(ws); we.setDate(we.getDate() + 6);
+    const fmt = (d) => (d.getMonth() + 1) + "/" + d.getDate();
+    return fmt(ws) + " - " + fmt(we);
+}
+function openWeeklyReport() {
+    const ws = weekStartTs();
+    const inWeek = (o) => o && o.ts && o.ts >= ws;
+    const quiz = (data.quizRecords || []).filter(inWeek);
+    const msgs = (data.messages || []).filter(inWeek);
+    const moods = (data.moodList || []).filter(inWeek);
+    const tasks = (data.finishTaskHistory || []).filter(inWeek);
+    const points = (data.pointHistory || []).filter(o => o && o.time && new Date(o.time).getTime() >= ws);
+    const matchCount = quiz.filter(q => q.match).length;
+    const pointDelta = points.length >= 2 ? (points[points.length - 1].point - points[0].point) : (points.length === 1 ? 0 : 0);
+    const meMsgs = msgs.filter(m => m.role === loginState.role || m.roleKey === loginState.role).length;
+    const days = new Set(msgs.map(m => m.ts ? new Date(m.ts).toDateString() : "")).size;
+    let txt = "📅 本周（" + weekRangeText() + "）\n\n";
+    txt += "💬 聊了 " + msgs.length + " 条消息（你 " + meMsgs + " 条）\n";
+    txt += "🧩 默契问答 " + quiz.length + " 次，答对 " + matchCount + " 次\n";
+    txt += "🌿 记录情绪 " + moods.length + " 次\n";
+    txt += "💫 完成约定 " + tasks.length + " 个\n";
+    txt += "💎 积分变动 " + (pointDelta >= 0 ? "+" + pointDelta : pointDelta) + "\n";
+    txt += "🔥 活跃了 " + days + " 天\n\n";
+    txt += WEEKLY_TIPS[Math.floor(Math.random() * WEEKLY_TIPS.length)];
+    document.getElementById("weeklyReportText").innerText = txt;
+    showModal("weeklyReportModal");
+}
 /* ---------------- 成就徽章系统 ---------------- */
 const BADGES = [
     { id: "pact_first", name: "初结约定", icon: "🤝", cat: "约定", tiers: null, desc: "完成第一个约定" },
@@ -3442,6 +3617,7 @@ function render() {
     data.point < 0 ? pointDom.classList.add("negative-point") : pointDom.classList.remove("negative-point");
     calcTaskStat(); renderMoodList(); renderInstantMessages(); renderShop();
     renderAnniv(); renderCheerBanner(); renderQuiz();
+    renderFortune(); checkFortuneReceived();
     checkComfortNotify();
     const applyArea = document.getElementById("userTaskApplyArea");
     if (loginState.role === "user") { applyArea.classList.remove("hide"); renderMyPendingList(); }
