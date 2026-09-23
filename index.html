@@ -1032,6 +1032,15 @@ function timeAgo(ts) {
     if (hr < 24) return hr + " 小时前在线";
     return Math.floor(hr / 24) + " 天前在线";
 }
+let presenceRetryTimer = null;
+function schedulePresenceRetry() {
+    if (presenceRetryTimer) return;
+    presenceRetryTimer = setTimeout(async () => {
+        presenceRetryTimer = null;
+        if (!cloudMode || !currentRoomId || !loginState.isLogin || presenceChannel || !supabase) return;
+        await subscribePresence();
+    }, 30000);
+}
 async function subscribePresence() {
     if (!cloudMode || !currentRoomId || !loginState.isLogin || !supabase) return;
     if (presenceChannel) return;
@@ -1056,6 +1065,7 @@ async function subscribePresence() {
             presenceOk = false;
             try { supabase.removeChannel(presenceChannel); } catch (e) {}
             presenceChannel = null;
+            schedulePresenceRetry();
         }
     });
 }
