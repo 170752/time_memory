@@ -1171,7 +1171,32 @@ async function loadCloudRoomData() {
         const cloudVer = roomRow.version;
         const localCache = getRoomCache(currentRoomId);
         const localVer = localCache && localCache.data ? (localCache.data.version || 0) : 0;
-        if (localVer > cloudVer) {
+        /* 强制本地覆盖标记（一次性）：云端标记角色 == 当前登录角色 且本机有缓存 → 用本机记录覆盖云端，之后恢复正常 */
+        let forceHandled = false;
+        if (cloudPayload && cloudPayload.data && cloudPayload.data._forceLocal === loginState.role) {
+            if (localCache && localCache.data && localCache.data.version) {
+                const localData2 = ensureDataFields(localCache.data);
+                delete localData2._forceLocal;
+                const pwdCfg2 = Object.assign({ admin: "123456", user: "654321", secretCode: "iloveyou", nickA: "", nickB: "" }, (localCache.pwdConfig || cloudPayload.pwdConfig || {}));
+                data = localData2; pwdConfig = pwdCfg2;
+                try {
+                    const up = await supabase.from("love_rooms").update({ payload: { data: JSON.parse(JSON.stringify(data)), pwdConfig: JSON.parse(JSON.stringify(pwdConfig)) }, version: data.version }).eq("id", currentRoomId);
+                    if (up.error) throw up.error;
+                    localRoomVersion = data.version;
+                    console.log("强制本机记录覆盖云端完成，已恢复正常同步");
+                } catch (e) { console.error("强制本机覆盖云端失败", e); }
+            } else {
+                /* 本机无缓存可覆盖：仅清除云端标记，保持云端数据 */
+                delete cloudPayload.data._forceLocal;
+                data = ensureDataFields(cloudPayload.data);
+                if (cloudPayload.pwdConfig) pwdConfig = Object.assign({ admin: "123456", user: "654321", secretCode: "iloveyou", nickA: "", nickB: "" }, cloudPayload.pwdConfig);
+                try {
+                    await supabase.from("love_rooms").update({ payload: { data: JSON.parse(JSON.stringify(data)), pwdConfig: JSON.parse(JSON.stringify(pwdConfig)) }, version: cloudVer }).eq("id", currentRoomId);
+                } catch (e) { console.error("清除强制覆盖标记失败", e); }
+            }
+            forceHandled = true;
+        }
+        if (!forceHandled && localVer > cloudVer) {
             /* 本地比云端新 → 本地上传覆盖云端，两边取最新 */
             const localData = ensureDataFields(localCache.data);
             const pwdCfg = Object.assign({ admin: "123456", user: "654321", secretCode: "iloveyou", nickA: "", nickB: "" }, localCache.pwdConfig || {});
