@@ -408,7 +408,8 @@ body.dark .badge-unlock-item{background:#33273a;color:var(--text-main);}
 <div class="btn-row"><button class="btn-purple" onclick="openWeeklyReport()">📄 查看本周恋爱周报</button></div>
 </div>
 <div class="info-card">
-<h3 style="display:flex;justify-content:space-between;align-items:center;"><span>💬 即时消息<span id="msgUnreadBadge" class="secret-badge hide" onclick="markMsgRead()" style="cursor:pointer;">0</span><span id="onlineBadge" class="online-badge offline">⚪ 好友离线</span></span><span style="display:flex;gap:6px;align-items:center;"><button class="btn-purple btn-sm" onclick="manualSync()" title="手动同步最新数据">🔄 同步</button><button class="btn-purple btn-sm" onclick="openSecretModal()">💌 悄悄话<span id="secretBadge" class="secret-badge hide">0</span></button></span></h3>
+<h3 style="display:flex;justify-content:space-between;align-items:center;"><span>💬 消息<span id="msgUnreadBadge" class="secret-badge hide" onclick="markMsgRead()" style="cursor:pointer;">0</span></span><span style="display:flex;gap:6px;align-items:center;"><button class="btn-purple btn-sm" onclick="manualSync()" title="手动同步最新数据">🔄 同步</button><button class="btn-purple btn-sm" onclick="openSecretModal()">💌 悄悄话<span id="secretBadge" class="secret-badge hide">0</span></button></span></h3>
+<div id="onlineBadge" class="online-badge offline" style="display:block;text-align:center;margin:2px 0 8px 0;padding:7px 0;font-size:12px;letter-spacing:.5px;">⚪ 好友离线</div>
 <div id="cheerBanner" class="cheer-banner hide" onclick="focusChatInput()"><span id="cheerText"></span></div>
 <div id="instantMsgList" class="msg-list"></div>
 <div id="msgNewTip" class="msg-new-tip hide" onclick="goMsgBottom()">⬇️ 有新消息，点击查看</div>
