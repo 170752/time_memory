@@ -154,6 +154,7 @@ body.dark .quiz-streak-tip{color:#d9a3c4;}
 body.dark .quiz-opt.picked{background:#44243a;color:#f3c8de;}
 .quiz-result{margin-top:8px;font-size:15px;line-height:2;}
 .quiz-wait{color:#94848c;font-size:13px;margin-top:6px;}
+.quiz-todo{color:#d06060;font-weight:600;background:rgba(208,96,96,.08);border-radius:8px;padding:7px 10px;margin-top:8px;}
 .quiz-hist-item{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-radius:8px;background:rgba(240,220,235,.25);margin-top:6px;font-size:13px;color:var(--text);}
 body.dark .quiz-hist-item{background:#33273a;}
 .quiz-hist-item .m{color:#c76aa0;font-weight:600;}
@@ -403,6 +404,12 @@ body.dark .badge-unlock-item{background:#33273a;color:var(--text-main);}
 <div id="fortuneBox"></div>
 </div>
 <div class="info-card">
+<h3 style="display:flex;justify-content:space-between;align-items:center;"><span>🧩 今日默契问答</span><span id="quizStreakTip" class="quiz-streak-tip"></span></h3>
+<div id="quizBox" class="quiz-box"></div>
+<h4 style="margin-top:12px;">📜 往日默契回顾</h4>
+<div id="quizHistory"></div>
+</div>
+<div class="info-card">
 <h3>📊 恋爱周报</h3>
 <p class="field-hint">每周自动汇总你们的甜蜜数据，生成专属周报</p>
 <div class="btn-row"><button class="btn-purple" onclick="openWeeklyReport()">📄 查看本周恋爱周报</button></div>
@@ -424,12 +431,6 @@ body.dark .badge-unlock-item{background:#33273a;color:var(--text-main);}
 </div>
 <div class="btn-row"><button class="btn-purple" onclick="addMoodRecord()">💾 保存情绪</button></div>
 <div id="moodListWrap"></div>
-</div>
-<div class="info-card">
-<h3 style="display:flex;justify-content:space-between;align-items:center;"><span>🧩 今日默契问答</span><span id="quizStreakTip" class="quiz-streak-tip"></span></h3>
-<div id="quizBox" class="quiz-box"></div>
-<h4 style="margin-top:12px;">📜 往日默契回顾</h4>
-<div id="quizHistory"></div>
 </div>
 <div class="info-card">
 <h3>🎁 积分商城 - 待兑换小事清单</h3>
@@ -2660,7 +2661,8 @@ function hasTodoItems() {
     const base = loginState.role === "admin"
         ? (confirmPending.length > 0 || taskPending.length > 0 || shopPending.length > 0 || returnPending.length > 0 || pactPending.length > 0 || shipPending.length > 0)
         : (undone.length > 0 || signPending.length > 0);
-    return base || !!negMood;
+    const quizTodo = data.quizDaily && data.quizDaily.date === todayStr() && (data.quizDaily.answers || {})[loginState.role] === undefined;
+    return base || !!negMood || quizTodo;
 }
 function showLoginSummary() { showGreetingSummary(); }
 function closeGreetingAndCheck() {
@@ -3366,6 +3368,7 @@ function renderQuiz() {
         html += '<button class="quiz-opt picked" onclick="answerQuiz(' + my + ')">' + (my === 0 ? q.a : q.b) + '</button>' +
             '<div class="quiz-wait">你已作答，等 ' + getRoleName(otherRole) + ' 也选一个，就能看默契结果啦～（点击可改）</div>';
     } else {
+        html += '<div class="quiz-wait quiz-todo">⏳ 今日还未作答，快和 ' + getRoleName(otherRole) + ' 选一个吧～</div>';
         html += '<button class="quiz-opt" onclick="answerQuiz(0)">' + q.a + '</button><button class="quiz-opt" onclick="answerQuiz(1)">' + q.b + '</button>';
     }
     box.innerHTML = html;
