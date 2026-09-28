@@ -6,9 +6,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="时光备忘录">
 <meta name="theme-color" content="#a86b94">
-<title>时光备忘录3.0｜Supabase云同步</title>
+<title>时光备忘录3.0｜CloudBase云同步</title>
 <!-- build:2026-09-22 -->
-<script src="vendor/supabase.min.js"></script>
 <script src="vendor/echarts.min.js"></script>
 <style>
 :root{--primary:#a86b94;--primary-dark:#7d4a68;--primary-deep:#6d3d58;--primary-soft:#faf2f7;--card-bg:#fff;--card-soft:#fdf7fb;--text-main:#5a4650;--text-sub:#8a7884;--text-light:#9c8c94;--border:#eed9e7;--border-dash:#e6d0e2;--danger:#e0566b;--success:#5cb889;--radius-lg:20px;--radius-md:14px;--radius-sm:10px;--gap:10px;--ctrl-h:44px;--grad-main:linear-gradient(135deg,#c08ac2,#a86b94 55%,#8f5a8c);--grad-soft:linear-gradient(160deg,#fdf3fa,#f7ebf5);--grad-card:linear-gradient(180deg,#ffffff,#fef9fc);--shadow-card:0 10px 32px rgba(168,107,148,.14),0 2px 8px rgba(168,107,148,.06);--shadow-item:0 4px 14px rgba(168,107,148,.10);--shadow-pop:0 20px 50px rgba(90,50,80,.28);}
@@ -336,7 +335,7 @@ body.dark .badge-unlock-item{background:#33273a;color:var(--text-main);}
 <!-- 房间选择页 -->
 <div id="roomPage" class="room-box">
 <h1>✨时光备忘录3.0</h1>
-<p class="room-sub">双人云同步备忘录 · Supabase</p>
+<p class="room-sub">双人云同步备忘录 · CloudBase</p>
 <div id="cloudCreateArea">
 <div class="btn-row"><button class="btn-purple" onclick="createNewRoom()">➕ 创建新双人房间</button></div>
 <div id="roomGenResult" class="gen-result-area hide">
@@ -671,27 +670,88 @@ body.dark .badge-unlock-item{background:#33273a;color:var(--text-main);}
 </div>
 
 <script>
-/* Supabase配置：填入 Project URL 与 anon key 即启用云同步；留空=本地模式（需先建表 love_rooms） */
-const SUPABASE_URL = "https://sgxiethpdwxijpmrakhy.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_GA4PFgLCgj7vTMXq0HklEQ_QFBWWmbI";
+/* CloudBase 云同步配置（腾讯云开发，PostgreSQL 版，语法兼容 Supabase）：留空=本地模式（需先建表 love_rooms） */
+const CB_ENV = "time-memory-d3ggghdm35ea2cdef";
+const CB_PUB_KEY = "eyJhbGciOiJSUzI1NiIsImtpZCI6IjA3ZjlkZjA2LWFkYjEtNGZmYi04Y2Y5LTJmOGVhZWNiMTk2ZCJ9.eyJpc3MiOiJodHRwczovL3RpbWUtbWVtb3J5LWQzZ2dnaGRtMzVlYTJjZGVmLmFwLXNoYW5naGFpLnRjYi1hcGkudGVuY2VudGNsb3VkYXBpLmNvbSIsInN1YiI6ImFub24iLCJhdWQiOiJ0aW1lLW1lbW9yeS1kM2dnZ2hkbTM1ZWEyY2RlZiIsImV4cCI6NDA5NDI5NjI2OSwiaWF0IjoxNzkwNjEzMDY5LCJub25jZSI6ImlweDVtMlhnVG42ZVBaNnQ2MXVZT1EiLCJhdF9oYXNoIjoiaXB4NW0yWGdUbjZlUFo2dDYxdVlPUSIsIm5hbWUiOiJBbm9ueW1vdXMiLCJzY29wZSI6ImFub255bW91cyIsInByb2plY3RfaWQiOiJ0aW1lLW1lbW9yeS1kM2dnZ2hkbTM1ZWEyY2RlZiIsIm1ldGEiOnsicGxhdGZvcm0iOiJQdWJsaXNoYWJsZUtleSJ9LCJyb2xlIjoiYW5vbiIsImlzX2Fub255bW91cyI6dHJ1ZSwiYXBwX21ldGFkYXRhIjp7InByb3ZpZGVyIjoiYW5vbnltb3VzIiwicHJvdmlkZXJzIjpbImFub255bW91cyJdfSwidXNlcl9tZXRhZGF0YSI6eyJuYW1lIjoiQW5vbnltb3VzIn0sInVzZXJfdHlwZSI6IiIsImNsaWVudF90eXBlIjoiY2xpZW50X3VzZXIiLCJpc19zeXN0ZW1fYWRtaW4iOmZhbHNlfQ.zY_j-6ggqekQSGnmnkGwOHhSUtzK6wo-U2Sf5X8O_5InEOirX2tMgjL6Jbq4yeNuNx7EOsAJnrlMhPIjVLB9ALJwlAC-ISTAtWfOQxws4UAKYkQRjpMSA4AneUkD2f6plKfWBonOa7pA9_obSeOaZH91nC9GAeS30xNQfJ_Kjn6DcgkqGuhpNGWx7SiZn2wJHPZXe2CCiTHiRG7wFZZRDaDKUx4l4bPA2o_Dqr6EHbB68SsVAezSPcTuvSSnM7LOJeCwCd4r_a8AALzJYRAYTl6AATKvXAefI1QyjI6fLCHk8J7vsrji4DoGJO1iCE1eQnQ2FksT3FUyO_YPTJW_TA";
+const CB_BASE = "https://" + CB_ENV + ".api.tcloudbasegateway.com/v1/rdb/rest";
 
 let cloudMode = false;
 let supabase = null;
-try {
-    if (SUPABASE_URL && SUPABASE_ANON_KEY && window.supabase) {
-        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-            global: {
-                fetch: function (url, opts) {
-                    const ctl = new AbortController();
-                    const t = setTimeout(function () { ctl.abort(); }, 15000);
-                    return fetch(url, Object.assign({}, opts, { signal: ctl.signal })).finally(function () { clearTimeout(t); });
-                }
+
+/* 统一请求封装：15 秒超时 + 错误归一化 */
+function cbaseRequest(path, opts) {
+    const ctl = new AbortController();
+    const t = setTimeout(function () { ctl.abort(); }, 15000);
+    return fetch(CB_BASE + "/" + path, Object.assign({
+        method: (opts && opts.method) || "GET",
+        headers: { "Authorization": "Bearer " + CB_PUB_KEY, "Content-Type": "application/json" },
+        body: opts && opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
+        signal: ctl.signal
+    })).then(function (resp) {
+        clearTimeout(t);
+        return resp.text().then(function (txt) {
+            if (!resp.ok) {
+                throw new Error("HTTP " + resp.status + " " + txt.slice(0, 200));
             }
+            /* CloudBase 对无 Prefer 头的 POST/PATCH 返回 201/204 但响应体为空 */
+            if (!txt) return null;
+            try { return JSON.parse(txt); } catch (e) { return txt; }
         });
+    }).catch(function (e) { clearTimeout(t); throw e; });
+}
+
+/* 兼容层：把 supabase.from(...) 的 select/insert/update/delete 映射到 CloudBase PostgREST */
+function cbaseTable(table) {
+    return {
+        insert: function (row) {
+            return cbaseRequest(table, { method: "POST", body: row })
+                .then(function () { return { error: null }; })
+                .catch(function (e) { return { error: e }; });
+        },
+        select: function (cols) {
+            return {
+                eq: function (col, val) {
+                    return {
+                        single: function () {
+                            return cbaseRequest(table + "?select=" + encodeURIComponent(cols) + "&" + encodeURIComponent(col) + "=eq." + encodeURIComponent(val))
+                                .then(function (rows) { return { data: (rows && rows[0]) || null, error: null }; })
+                                .catch(function (e) { return { error: e }; });
+                        }
+                    };
+                }
+            };
+        },
+        update: function (obj) {
+            return {
+                eq: function (col, val) {
+                    return cbaseRequest(table + "?" + encodeURIComponent(col) + "=eq." + encodeURIComponent(val), { method: "PATCH", body: obj })
+                        .then(function () { return { error: null }; })
+                        .catch(function (e) { return { error: e }; });
+                }
+            };
+        }
+    };
+}
+
+try {
+    if (CB_ENV && CB_PUB_KEY) {
+        supabase = {
+            from: cbaseTable,
+            /* 实时通道与在线状态在 CloudBase 免费版无对应接口：降级为 10s 轮询 + lastSeen 心跳 */
+            channel: function () {
+                return {
+                    on: function () { return this; },
+                    subscribe: function (cb) { if (typeof cb === "function") cb("CHANNEL_ERROR"); return this; },
+                    track: function () { return Promise.resolve(); },
+                    presenceState: function () { return null; }
+                };
+            },
+            removeChannel: function () {}
+        };
         cloudMode = true;
     }
 } catch (e) {
-    console.error("Supabase初始化失败，进入本地模式", e);
+    console.error("CloudBase初始化失败，进入本地模式", e);
     cloudMode = false;
 }
 
@@ -893,7 +953,7 @@ async function createNewRoom() {
         const { error } = await supabase.from("love_rooms").insert({ id: roomId, payload: initPayload, version: 1, passcode: passcode });
         if (error) { alert("创建房间失败：" + error.message); return; }
     } catch (err) {
-        alert("无法连接云端服务：" + err.message + "\n请确认已填写正确的Supabase配置并执行建表SQL，或改用本地模式。");
+        alert("无法连接云端服务：" + err.message + "\n请确认已填写正确的CloudBase配置并执行建表SQL，或改用本地模式。");
         return;
     }
     document.getElementById("genRoomCodeReadonly").value = roomId;
@@ -3883,7 +3943,7 @@ window.addEventListener("load", function () {
             document.getElementById("roomStatusTip").innerText = "☁️ 云同步已开启，创建或加入房间开始使用";
         }
     } else {
-        document.getElementById("roomStatusTip").innerText = "⚠️ 未配置Supabase，当前为本地模式";
+        document.getElementById("roomStatusTip").innerText = "⚠️ 未配置CloudBase，当前为本地模式";
     }
 });
 </script>
